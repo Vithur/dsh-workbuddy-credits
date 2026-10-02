@@ -11,8 +11,10 @@
  * 关于 `inject` —— 这里刻意**不**声明任何硬依赖。原因与 `dsh-our-free-model`
  * 踩过的坑一致：Cordis 会把 `inject` 里缺席的服务所在 fiber 一直挂起，
  * 一个 headless 组合（没有 HTTP 服务）就会让整个插件永远不激活。所以
- * `connection`、`settings`、`configEditor` 都走**嵌套的注入 fiber**：缺席只是
- * 少一个功能，不会拖垮插件本体。
+ * `connection`、`settings`、`configEditor`、`credentials` 都走**嵌套的注入 fiber**：
+ * 缺席只是少一个功能，不会拖垮插件本体。
+ * 反过来说，凡是依赖「比本插件更晚就绪的服务」的启动动作，都必须把那个服务**列进
+ * 注入依赖**里等它 —— 见下方推理等级同步的 `credentials`。
  *
  * @module index.js
  */
@@ -299,7 +301,11 @@ export function apply(ctx, config) {
   // 推理等级同步会改用户配置，所以默认关；只有显式 syncReasoning: true 才挂。
   safely('推理等级同步', () => {
     if (merged.syncReasoning !== true) return
-    ctx.inject(['configEditor'], (c) => {
+    // `credentials` 必须和 `configEditor` 一起声明：它是**后到**的服务 —— 实测插件
+    // 激活那一刻 `ctx.get('credentials')` 还是 undefined，约两秒后才就绪。只声明
+    // configEditor 的话，同步会在激活时跑一次、拿不到密钥、静默失败，于是表现为
+    // 「网关模型没有原生推理等级菜单」，而且日志里的 warn 没人看得见。
+    ctx.inject(['configEditor', 'credentials'], (c) => {
       c.effect(() => {
         // 异步做，不阻塞插件激活。`syncReasoning` 本身承诺不 reject，这里再接一道
         // `.catch` 是兜底：未处理的 rejection 会被 Node 升级成进程级异常，

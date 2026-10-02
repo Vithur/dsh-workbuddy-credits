@@ -113,7 +113,11 @@ const llmPiAiConfig = {
   },
 }
 
-function makeCtx() {
+/** 宿主在这份假 ctx 里“装有”的服务；`missing` 用来模拟服务尚未就绪。 */
+const PROVIDED = ['connection', 'settings', 'configEditor', 'credentials', 'llm-pi-ai']
+
+function makeCtx({ missing = [] } = {}) {
+  const provided = PROVIDED.filter((name) => !missing.includes(name))
   return {
     logger: { info: () => {}, warn: () => {}, debug: () => {} },
     on: () => () => {},
@@ -122,6 +126,7 @@ function makeCtx() {
       return typeof disposer === 'function' ? disposer : () => {}
     },
     get: (name) => {
+      if (!provided.includes(name)) return undefined
       if (name === 'credentials') return { resolve: async () => ({ value: 'wb2a_fake' }) }
       if (name === 'llm-pi-ai') return { config: llmPiAiConfig }
       if (name === 'configEditor') {
@@ -153,7 +158,10 @@ function makeCtx() {
         }),
         settings: { register: (ns, schema) => { settingsRegistrations.push({ ns, schema }) } },
       }
-      if (deps.includes('connection') || deps.includes('settings') || deps.includes('configEditor')) body(injected)
+      // 真实 Cordis 的注入 fiber 要等**全部**依赖都提供出来才跑；缺一个就一直挂着，
+      // 静默少一个功能。之前这里是「命中任一依赖就跑」，等于给插件递了一个真实环境
+      // 里根本不成立的时序 —— credentials 未就绪就同步的 bug 正是这么漏掉的。
+      if (deps.every((dep) => provided.includes(dep))) body(injected)
       return { dispose: () => {} }
     },
   }
@@ -210,6 +218,15 @@ await new Promise((resolve) => setTimeout(resolve, 50))
 
 await test('显式开启 syncReasoning 后才写入', () => {
   assert.equal(edits.length, 1, '应当同步一次')
+})
+
+// credentials 是**后到**的服务：激活时还没有，约两秒后就绪。同步必须等它，
+// 否则每次启动都是「拿不到密钥 → 静默不写」，用户看到的就是推理等级菜单空着。
+plugin.apply(makeCtx({ missing: ['credentials'] }), { baseUrl: 'http://gateway.test', apiKey: 'wb2a_fake', syncReasoning: true })
+await new Promise((resolve) => setTimeout(resolve, 50))
+
+await test('credentials 尚未就绪时**不**同步（等注入 fiber，不抢跑）', () => {
+  assert.equal(edits.length, 1, '缺凭据服务还去同步 = 必然静默失败')
 })
 
 console.log('取快照分支')
