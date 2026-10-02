@@ -1,0 +1,70 @@
+{
+  "name": "dsh-workbuddy-credits",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DeepSeek Harness 插件：记录 workbuddy2api 网关的积分用量 —— 输入框下方状态栏显示当前会话模型的积分消耗，设置页显示账户余额、用量明细与积分扣除历史，并按网关声明同步模型的推理档位。",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./dist/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "dist/client.js",
+    "src",
+    "client",
+    "shared",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "credits",
+    "usage",
+    "workbuddy2api"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vithur/dsh-workbuddy-credits.git"
+  },
+  "homepage": "https://github.com/vithur/dsh-workbuddy-credits",
+  "bugs": {
+    "url": "https://github.com/vithur/dsh-workbuddy-credits/issues"
+  },
+  "scripts": {
+    "build": "node scripts/build-client.mjs",
+    "link": "node scripts/sync-install.mjs",
+    "link:copy": "node scripts/sync-install.mjs --copy",
+    "check": "node scripts/check-locale.mjs && node scripts/scan-text.mjs",
+    "test": "node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs",
+    "test:route": "node scripts/route-test.mjs",
+    "test:live": "node scripts/live-check.mjs",
+    "check:context": "node scripts/check-context.mjs",
+    "probe:efforts": "node scripts/probe-efforts.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "mount": "node scripts/mount-test.mjs",
+    "verify": "node scripts/check-locale.mjs && node scripts/scan-text.mjs && node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs && node scripts/smoke.mjs && node scripts/mount-test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "license": "MIT"
+}

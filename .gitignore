@@ -1,0 +1,7 @@
+# 依赖
+node_modules/
+
+# 构建产物里的临时文件（dist/client.js 是要提交的，见 README）
+*.log
+.DS_Store
+Thumbs.db

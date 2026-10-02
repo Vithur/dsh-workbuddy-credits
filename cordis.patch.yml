@@ -1,0 +1,9 @@
+# dsh-workbuddy-credits bundle patch
+#
+# 一行 insert 挂载 Host 半身；浏览器半身由 package.json 的 dsh.client 声明，
+# 并绑定在 id 为 `workbuddy-credits` 的这一行上（必须与 index.js 的 name、
+# 以及 dist/client.js 的 loader id 三者一致）。
+- insert:
+    - id: workbuddy-credits
+      name: 'dsh-workbuddy-credits'
+      config: {}
