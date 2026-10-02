@@ -107,11 +107,13 @@ function applyWithFakeCtx(plugin) {
     bind: (ns) => (key) => `${ns}.${key}`,
   }
 
-  // `apply` 直接读 ctx.locale / ctx.effect（与 dsh-context 同一形状），
-  // 同时用 ctx.inject 拿 slots —— 两个通道都必须提供。
-  const ctx = {
+  // 真实客户端 ctx 是**受限**的：只有 `inject` 里声明过的服务才能读，而且读的属性
+  // 访问器本身会抛（不是返回 undefined，所以 `ctx.x?.y` 挡不住）。这里用 Proxy 复刻
+  // 那个行为 —— 否则测试会给插件递一个真实环境里根本不存在的 `ctx.settings`，
+  // 「插件显示已加载、设置页却一片空白」就是这么漏掉线上验证的。
+  const raw = {
     locale,
-    settings: undefined,
+    slots,
     effect: (fn, label) => {
       effects.push({ fn, label })
       // 真实 Cordis 会立即执行注册体并持有返回的 disposer。
@@ -119,23 +121,28 @@ function applyWithFakeCtx(plugin) {
       return () => disposer?.()
     },
     inject: (deps, body) => {
-      const injected = {
-        slots,
-        locale,
-        settings: undefined,
-        effect: (fn, label) => {
-          effects.push({ fn, label })
-          const disposer = fn()
-          return () => disposer?.()
-        },
-      }
-      body(injected)
+      body(restricted(deps))
       return { dispose: () => {} }
     },
   }
+  // ctx 上除了声明过的服务，还有 effect / inject 这些框架自带的成员。
+  // **不放 `console`** —— 它是客户端 Builtin（和 React 同级）而不是 ctx 服务，
+  // 写 `ctx.console` 在真实环境里会抛；放进来就等于把这个坑遮住。
+  const allowed = new Set(['effect', 'inject', ...(plugin.inject ?? [])])
 
-  plugin.apply(ctx)
+  plugin.apply(restricted(allowed))
   return { registrations, effects }
+
+  /** 按 `inject` 名单造一个受限 ctx：名单外的属性一读就抛，与真实客户端一致。 */
+  function restricted(names) {
+    const set = names instanceof Set ? names : new Set(names)
+    return new Proxy(raw, {
+      get: (target, prop) => {
+        if (typeof prop === 'symbol' || set.has(prop)) return target[prop]
+        throw new Error(`cannot get property "${String(prop)}" without inject`)
+      },
+    })
+  }
 }
 
 console.log('bundle 装载')
@@ -153,6 +160,13 @@ test('loader id 等于包名（不一致会让 DSH 打不开）', () => {
 test('导出 name / apply', () => {
   assert.equal(plugin.name, 'workbuddy-credits')
   assert.equal(typeof plugin.apply, 'function')
+})
+test('**声明了 inject: slots + locale**（缺了会让 DSH 打不开）', () => {
+  // 客户端 ctx 是受限上下文：只有列在 inject 里的服务才会出现。不声明的话
+  // ctx.slots / ctx.locale 是 undefined，apply 立刻抛 → 条目 failed → web boot 崩。
+  assert.ok(Array.isArray(plugin.inject), 'inject 必须是数组')
+  assert.ok(plugin.inject.includes('slots'), 'inject 里必须有 slots')
+  assert.ok(plugin.inject.includes('locale'), 'inject 里必须有 locale')
 })
 
 console.log('apply 装配')

@@ -43,6 +43,7 @@ var __WB_CREDITS__ = (() => {
   var index_exports = {};
   __export(index_exports, {
     apply: () => apply,
+    inject: () => inject,
     name: () => name
   });
   var import_react4 = __toESM(__require("react"), 1);
@@ -51,7 +52,6 @@ var __WB_CREDITS__ = (() => {
   var LOCALE_NS = "workbuddyCredits";
   var API_ROUTE = "/api/workbuddy-credits/usage";
   var DEFAULT_POLL_MS = 3e4;
-  var MIN_POLL_MS = 5e3;
 
   // client/format.js
   var format_exports = {};
@@ -846,24 +846,20 @@ var __WB_CREDITS__ = (() => {
 
   // client/index.js
   var name = "workbuddy-credits";
+  var inject = ["slots", "locale"];
   function apply(ctx) {
-    ctx.effect(
-      () => ctx.locale.register(LOCALE_NS, {
-        zh: DICT_ZH,
-        en: DICT_EN
-      }),
-      "workbuddy-credits: dictionaries"
-    );
-    const t = ctx.locale.bind(LOCALE_NS);
-    ctx.inject(["slots"], (c) => {
-      const slots = c.slots;
-      const pollMs = () => {
-        const configured = ctx.settings?.get?.()?.pollMs;
-        return typeof configured === "number" && configured >= MIN_POLL_MS ? configured : DEFAULT_POLL_MS;
-      };
-      slots.inject(
+    try {
+      ctx.effect(
+        () => ctx.locale.register(LOCALE_NS, {
+          zh: DICT_ZH,
+          en: DICT_EN
+        }),
+        "workbuddy-credits: dictionaries"
+      );
+      const t = ctx.locale.bind(LOCALE_NS);
+      ctx.slots.inject(
         "conversation.composer.dock",
-        () => slots.register(
+        () => ctx.slots.register(
           {
             name: "conversation.composer.dock",
             id: "workbuddy-credits",
@@ -875,13 +871,13 @@ var __WB_CREDITS__ = (() => {
             t,
             fmt: format_exports,
             useSnapshot,
-            pollMs: pollMs()
+            pollMs: DEFAULT_POLL_MS
           })
         )
       );
-      slots.inject(
+      ctx.slots.inject(
         "settings.section",
-        () => slots.register(
+        () => ctx.slots.register(
           {
             name: "settings.section",
             id: "workbuddy-credits-balance",
@@ -894,11 +890,16 @@ var __WB_CREDITS__ = (() => {
             t,
             fmt: format_exports,
             useSnapshot,
-            pollMs: pollMs()
+            pollMs: DEFAULT_POLL_MS
           })
         )
       );
-    });
+    } catch (error) {
+      try {
+        console.error("workbuddy-credits: \u754C\u9762\u672A\u6302\u8F7D", error);
+      } catch {
+      }
+    }
   }
   return __toCommonJS(index_exports);
 })();
