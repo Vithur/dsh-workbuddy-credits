@@ -146,6 +146,41 @@ npm run link:copy     # 退回拷贝模式
 
 > 改 `index.js` / `src/` 后要重启 DSH；只改 `client/` 并重新 `npm run build` 则不用。
 
+## 装不崩的保证
+
+这个插件**真的把用户的 DSH 搞崩过一次**，所以下面两条不是口头承诺，而是机械验证的性质：
+
+```sh
+npm run preflight   # 94 项检查，退出码非 0 就**不要装**
+```
+
+| 性质 | 为什么 | 怎么验 |
+| --- | --- | --- |
+| **不导出 `Config`** | 宿主对没有 `Config` 的插件原样放行；一旦导出就必须是 schemastery schema，给错形状会走宿主的配置解析路径 —— **致命** | `preflight` 断言 `'Config' in mod === false`；`smoke` / `route-test` 各有一条 |
+| **`apply` 永不抛异常** | 插件的失败不该有机会变成宿主的启动失败 | `preflight` 拿 **11 种恶意 ctx × 7 种畸形配置 = 77 种组合**跑 `apply`，全部必须正常返回 |
+| **异步路径不产生未处理 rejection** | Node 会把未处理的 rejection 升级成进程级异常，这是「插件搞崩宿主」最典型的形态 | `preflight` 全程挂 `unhandledRejection` 监听，出现即判失败 |
+| **Host 依赖链无外部包** | 外部依赖解析失败会让条目激活失败 | `preflight` 递归收集 `index.js` 的整条 import 链，断言全是相对路径 |
+
+### 万一还是崩了：不依赖 DSH 的恢复
+
+DSH 起不来时按这两步删，**不需要 DSH 能打开**：
+
+1. 编辑 `~/.dsh/profiles/desktop/cordis.patch.yml`，删掉 `- id: workbuddy-credits` 那一行（含它下面的 `config:` 块）
+2. 编辑 `~/.dsh/profiles/desktop/package.json`，把 `dependencies` 里的 `"dsh-workbuddy-credits"` 删掉，并把 `dsh.profile.bundles` 里的 `"dsh-workbuddy-credits"` 删掉
+3. 可选：删掉 `~/.dsh/profiles/desktop/node_modules/dsh-workbuddy-credits` 目录
+
+改完直接启动 DSH 即可 —— 它按这两份配置组装插件树，不依赖任何缓存。
+
+### 安装后建议的验证顺序
+
+```sh
+npm run preflight   # 装之前先跑，通过再装
+# 装上并重启 DSH
+# 看一眼 GUI：状态栏最左应有积分 pill，设置页应有「积分余额」
+```
+
+宿主插件模块在进程内只加载一次，所以**装完必须重启**才生效；装完没反应不等于坏了。
+
 ## 配置
 
 **插件刻意不导出 `Config`** —— 这一条是踩过坑才定下来的，详见文末「踩坑记录」。

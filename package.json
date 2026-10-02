@@ -51,7 +51,8 @@
     "probe:efforts": "node scripts/probe-efforts.mjs",
     "smoke": "node scripts/smoke.mjs",
     "mount": "node scripts/mount-test.mjs",
-    "verify": "node scripts/check-locale.mjs && node scripts/scan-text.mjs && node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs && node scripts/smoke.mjs && node scripts/mount-test.mjs"
+    "preflight": "node scripts/preflight.mjs",
+    "verify": "node scripts/check-locale.mjs && node scripts/scan-text.mjs && node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs && node scripts/smoke.mjs && node scripts/mount-test.mjs && node scripts/preflight.mjs"
   },
   "dsh": {
     "bundle": {

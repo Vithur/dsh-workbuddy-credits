@@ -231,20 +231,27 @@ function serveRoute(ctx, config, gateway) {
 /**
  * 按网关能力同步一次推理等级。
  *
- * 这是让模型菜单出现官方 Off/Low/High/Max 档位的**唯一**路径：菜单读的是
- * 适配器声明的能力，而适配器的能力来自 `llm-pi-ai` 配置里的 `reasoningEfforts`。
- * 插件不自己画选择器，只把配置补对。
+ * 这是让模型菜单出现网关所声明档位的**唯一**路径：菜单读的是适配器声明的能力，
+ * 而适配器的能力来自 `llm-pi-ai` 配置里的 `reasoningEfforts`。插件不自己画选择器，
+ * 只把配置补对。
+ *
+ * ## 契约：这个 promise **永不 reject**
+ *
+ * 它是被 `void syncReasoning(...)` 这样「发射后不管」地调用的。一旦 reject 而没人
+ * 接住，Node 会把未处理的 rejection 升级成进程级异常 —— 那是能拖垮宿主的东西。
+ * 所以整个函数体都包在 try/catch 里，失败一律变成 `{ ok: false, reason }`。
+ * preflight 里专门装了 `unhandledRejection` 监听来守这条。
  */
 async function syncReasoning(ctx, config, gateway) {
-  const credentials = ctx.get('credentials')
-  const key = await resolveApiKey(credentials, config.apiKeyRef, config.apiKey)
-  if (!key) return { ok: false, reason: '未找到网关 API Key' }
-
-  const active = gatewayFor(key.key, config.baseUrl, gateway)
-  const models = configuredModels(readPiAiConfig(ctx), config.providers)
-  if (models.length === 0) return { ok: false, reason: '没有读到已添加的模型清单' }
-
   try {
+    const credentials = typeof ctx.get === 'function' ? ctx.get('credentials') : undefined
+    const key = await resolveApiKey(credentials, config.apiKeyRef, config.apiKey)
+    if (!key) return { ok: false, reason: '未找到网关 API Key' }
+
+    const active = gatewayFor(key.key, config.baseUrl, gateway)
+    const models = configuredModels(readPiAiConfig(ctx), config.providers)
+    if (models.length === 0) return { ok: false, reason: '没有读到已添加的模型清单' }
+
     return await syncReasoningEfforts(ctx, active, {
       providerId: config.reasoningProvider,
       models,
@@ -252,38 +259,81 @@ async function syncReasoning(ctx, config, gateway) {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return { ok: false, reason: `写入配置失败：${message}` }
+    return { ok: false, reason: `推理等级同步失败：${message}` }
   }
 }
 
-/** 插件主体。 */
+/**
+ * 插件主体。
+ *
+ * ## 契约：`apply` **永不抛异常**
+ *
+ * 宿主对「条目激活失败」是降级处理（记一条 warning，其余照常），但这里仍然把
+ * 每一步单独兜住，理由是：插件的任何失败都不该有机会变成宿主的启动失败。
+ * 之前那版就是在这里失守的 —— 导出的 `Config` 形状不对，异常发生在宿主的
+ * 配置解析路径上，直接把 DSH 拖到起不来。
+ *
+ * `scripts/preflight.mjs` 里有一组「恶意 ctx」断言专门守这条契约：缺服务、
+ * 服务为 null、服务方法抛异常，`apply` 都必须正常返回。
+ */
 export function apply(ctx, config) {
   const merged = resolveConfig(config)
   const gateway = new Gateway(merged.baseUrl, '')
 
-  serveRoute(ctx, merged, gateway)
+  /** 跑一步，失败只记一笔 —— 连 logger 都坏了也不许把异常放出去。 */
+  const safely = (label, operation) => {
+    try {
+      operation()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      try {
+        ctx.logger?.warn?.(`workbuddy-credits: ${label} 未挂载 —— ${message}`)
+      } catch {
+        // 日志通道本身不可用，那就安静跳过：插件已经降级到「什么都不做」。
+      }
+    }
+  }
 
-  if (merged.syncReasoning !== false) {
+  safely('用量路由', () => serveRoute(ctx, merged, gateway))
+
+  // 推理等级同步会改用户配置，所以默认关；只有显式 syncReasoning: true 才挂。
+  safely('推理等级同步', () => {
+    if (merged.syncReasoning !== true) return
     ctx.inject(['configEditor'], (c) => {
       c.effect(() => {
-        // 异步做，不阻塞插件激活；失败只记一笔。
-        void syncReasoning(ctx, merged, gateway).then((result) => {
-          if (result.ok === false && result.reason) {
-            ctx.logger?.warn?.(`workbuddy-credits: 推理等级未同步 —— ${result.reason}`)
-          }
-        })
+        // 异步做，不阻塞插件激活。`syncReasoning` 本身承诺不 reject，这里再接一道
+        // `.catch` 是兜底：未处理的 rejection 会被 Node 升级成进程级异常，
+        // 那正是「插件把宿主搞崩」最典型的形态。
+        void syncReasoning(ctx, merged, gateway)
+          .then((result) => {
+            if (result.ok === false && result.reason) {
+              ctx.logger?.warn?.(`workbuddy-credits: 推理等级未同步 —— ${result.reason}`)
+            }
+          })
+          .catch((error) => {
+            try {
+              const message = error instanceof Error ? error.message : String(error)
+              ctx.logger?.warn?.(`workbuddy-credits: 推理等级同步异常 —— ${message}`)
+            } catch {
+              // 日志通道也坏了，那就彻底安静。
+            }
+          })
         return () => {}
       }, 'workbuddy-credits: reasoning sync')
     })
-  }
+  })
 
-  ctx.logger?.info?.(`workbuddy-credits: 已启用，网关 ${merged.baseUrl}`)
+  safely('卸载清理', () => {
+    ctx.effect(() => () => {
+      try {
+        gateway.invalidate()
+      } catch {
+        // 卸载时清理缓存失败不需要打扰用户。
+      }
+    }, 'workbuddy-credits: dispose')
+  })
 
-  ctx.effect(() => () => {
-    try {
-      gateway.invalidate()
-    } catch {
-      // 卸载时清理缓存失败不需要打扰用户。
-    }
-  }, 'workbuddy-credits: dispose')
+  safely('启动日志', () => {
+    ctx.logger?.info?.(`workbuddy-credits: 已启用，网关 ${merged.baseUrl}`)
+  })
 }
