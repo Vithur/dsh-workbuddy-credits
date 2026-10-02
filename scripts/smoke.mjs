@@ -41,8 +41,14 @@ test('外壳调用 window.__ModuleLoader__.load', () => {
   assert.ok(dist.includes('window.__ModuleLoader__.load('), '缺少 loader 外壳')
 })
 
-test('entry id 是 workbuddy-credits', () => {
-  assert.ok(dist.includes('id: "workbuddy-credits"'), 'entry id 不匹配')
+test('**bundle id 必须等于包名**（不一致会让 DSH 打不开）', () => {
+  // 加载器按包名建模块行，用 stripClientSuffix(registration.id) 比对。id 对不上
+  // 会让 bundle 被**再执行一次** → duplicate factory registration → web boot 崩。
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+  assert.ok(
+    dist.includes(`id: ${JSON.stringify(pkg.name)}`),
+    `bundle 的 id 必须是 "${pkg.name}"，实际产物里不是`,
+  )
 })
 
 test('factory 以 require 索取宿主依赖', () => {

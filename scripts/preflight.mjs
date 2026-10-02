@@ -177,8 +177,13 @@ const bundle = fs.readFileSync(path.join(root, pkg.exports['./client']), 'utf8')
 check('调用 window.__ModuleLoader__.load', () => {
   assert.ok(bundle.includes('window.__ModuleLoader__.load('))
 })
-check('entry id 与包名后缀一致', () => {
-  assert.ok(bundle.includes(`id: "workbuddy-credits"`))
+check('**bundle id 等于包名**（不一致会让 DSH 打不开）', () => {
+  // 加载器按包名建模块行，用 stripClientSuffix(registration.id) 比对。id 对不上会让
+  // bundle 被再执行一次 → duplicate factory registration → web boot 崩。
+  assert.ok(
+    bundle.includes(`id: ${JSON.stringify(pkg.name)}`),
+    `bundle 的 id 必须是 "${pkg.name}"`,
+  )
 })
 check('factory 只通过 require 向宿主索取依赖', () => {
   assert.ok(/factory:\s*\(require\)/.test(bundle))

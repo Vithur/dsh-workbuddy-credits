@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: "workbuddy-credits",
+  id: "dsh-workbuddy-credits",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;

@@ -145,8 +145,10 @@ const { plugin } = mount()
 test('loader 产出了插件对象', () => {
   assert.ok(plugin, 'factory 没有返回内容')
 })
-test('id 是 workbuddy-credits', () => {
-  assert.equal(plugin.id, 'workbuddy-credits')
+test('loader id 等于包名（不一致会让 DSH 打不开）', () => {
+  // 加载器按包名建模块行；id 对不上会让 bundle 被再执行一次 → 重复注册 → boot 崩。
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+  assert.equal(plugin.id, pkg.name)
 })
 test('导出 name / apply', () => {
   assert.equal(plugin.name, 'workbuddy-credits')
