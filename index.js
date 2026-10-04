@@ -64,8 +64,6 @@ const CONFIG_DEFAULTS = {
   apiKey: '',
   /** 要统计的 provider id；留空表示配置里的全部 provider。 */
   providers: [],
-  /** 各维度表格最多显示多少行。 */
-  rowLimit: 10,
   /** 推理等级要同步到哪个 provider 的模型配置。 */
   reasoningProvider: 'workbuddy',
   /**
@@ -97,12 +95,12 @@ async function snapshotOnce(ctx, config, gateway) {
   const credentials = ctx.get('credentials')
   const key = await resolveApiKey(credentials, config.apiKeyRef, config.apiKey)
   if (!key) {
-    return { ok: false, error: '未找到网关 API Key', matches: [], models: [], accounts: [], creditModels: [], creditAccounts: [], series: [] }
+    return { ok: false, error: '未找到网关 API Key', models: [], accountCards: [], series: [], matches: [] }
   }
   const active = gatewayFor(key.key, config.baseUrl, gateway)
   const llmPiAi = readPiAiConfig(ctx)
   const models = configuredModels(llmPiAi, config.providers)
-  return await buildSnapshot(ctx, active, { models, rowLimit: config.rowLimit })
+  return await buildSnapshot(ctx, active, { models })
 }
 
 /**

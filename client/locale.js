@@ -2,7 +2,13 @@
  * 中英文字典。
  *
  * 键值按用途命名，方便查漏。两个语言必须键完全一致 ——
- * 少了任何一个键，界面上就会露出裸的 key 名。
+ * 少了任何一个键，界面上就会露出裸的key 名。
+ *
+ * ## 只写界面真正在读的词
+ *
+ * 这份字典服务于「设置页三段 + 状态栏 pill」，不是说明书。凡是「倍率怎么算的」
+ * 「这个窗口多长」这类口径说明，一律不进界面 —— 网关改一次口径，界面上的
+ * 说明就变成错的，而正确做法是让 Host 侧算出结果、界面只负责显示。
  *
  * @module client/locale.js
  */
@@ -15,62 +21,43 @@ export const DICT_ZH = {
   loading: '读取中',
   unreachable: '网关不可达',
   retry: '重试',
-  updatedAt: '更新于',
+  noData: '暂无数据',
 
-  // 页头
+  // 设置页菜单项
   balancePage: '积分余额',
-  balanceHint: '账户总览、用量明细与积分扣除历史',
 
-  // 一行总览
-  totalBalance: '账户合计',
-  ofCapacity: '总额',
-  expiring: '即将过期',
-  totalCredits: '本期积分',
-  requests: '请求数',
-  failed: '失败',
-  allOk: '全部成功',
-  totalTokens: '总 token',
+  // 概览三栏
+  creditsGroup: '积分',
+  refresh: '刷新',
+  refreshing: '同步中',
+  refreshHint: '重新读取网关的全部数据',
+  balanceRatio: '剩余 / 总额',
+  avgPer1m: '积分 / 1M Token',
   cacheHit: '缓存命中率',
-  since: '统计起点',
 
-  // 模型倍率
-  modelRates: '模型倍率',
-  modelRatesHint: '已添加模型与网关当前倍率的对应关系，按倍率降序',
+  // 模型板块
   model: '模型',
   multiplier: '倍率',
-  creditsCol: '积分',
-  tokensCol: 'token',
-  unused: '本期无用量',
-  unknownRate: '未知',
-
-  // 小时趋势
-  hourlyTrend: '小时趋势',
-  hourlyTrendHint: '每个小时的积分消耗',
-
-  // 积分扣除历史
-  creditHistory: '积分扣除历史',
-  byAccount: '按账号',
-  byModel: '按模型',
-  account: '账号',
+  requests: '请求',
   creditsDeducted: '扣除积分',
-  creditsDeductedHint: '按上游 usage.credit 累计',
-  matchedTokens: '匹配 Token',
-  matchedTokensHint: '与积分同时观测到的 Token',
-  avgPer1m: '平均积分 / 1M Token',
-  avgPer1mHint: '越低越划算',
-  creditSamples: '有效积分样本',
-  creditSamplesHint: '缺字段的历史不参与折算',
-  cacheHitHint: '上游前缀缓存命中 / (命中+未命中)；低命中意味着费用数倍放大',
-  sampleTokens: '有效样本 Token',
-  per1m: '积分 / 1M Token',
-  creditEmpty: '暂无积分扣除记录；升级前仅含 Token 的历史不会伪造积分。',
-  unitAccounts: '个账号',
-  unitModelGroups: '个模型倍率分组',
-  creditOnlyObserved: '仅统计与积分同时观测到的 Token',
+  noCredits: '本期无扣除',
+  per1mCredits: '积分 / 1M Token',
+  capTool: '工具',
+  capVision: '视觉',
+  capThinking: '思考常开',
+  underRate: '生效倍率 ≤',
+  countUnit: '个',
+  noLowRateModel: '当前没有生效倍率低于阈值的模型',
 
-  // 明细表与说明
-  noData: '暂无数据',
-  scopeNote: '网关按小时聚合，不区分会话：此处为本期整体消耗，非单个会话的量。',
+  // 账号板块
+  accounts: '账号',
+  creditsUnit: '积分',
+  realmCn: '国内',
+  realmGlobal: '国际',
+  available: '可用',
+  rateLimited: '限流',
+  unlockAt: '解封',
+  noAccounts: '网关还没有账号',
 }
 
 export const DICT_EN = {
@@ -79,56 +66,39 @@ export const DICT_EN = {
   loading: 'Loading',
   unreachable: 'Gateway unreachable',
   retry: 'Retry',
-  updatedAt: 'Updated',
+  noData: 'No data',
 
   balancePage: 'Credit balance',
-  balanceHint: 'Account overview, usage detail, and credit deduction history',
 
-  totalBalance: 'All accounts',
-  ofCapacity: 'of',
-  expiring: 'expiring',
-  totalCredits: 'Credits spent',
-  requests: 'Requests',
-  failed: 'failed',
-  allOk: 'all succeeded',
-  totalTokens: 'Total tokens',
+  creditsGroup: 'Credits',
+  refresh: 'Refresh',
+  refreshing: 'Syncing',
+  refreshHint: 'Re-read every value from the gateway',
+  balanceRatio: 'Remaining / total',
+  avgPer1m: 'Credits / 1M tokens',
   cacheHit: 'Cache hit',
-  since: 'Since',
 
-  modelRates: 'Model rates',
-  modelRatesHint: 'Configured models matched against the gateway current multiplier, priciest first',
-  model: 'Model',
+  model: 'Models',
   multiplier: 'Rate',
-  creditsCol: 'Credits',
-  tokensCol: 'Tokens',
-  unused: 'No usage this period',
-  unknownRate: 'Unknown',
+  requests: 'Requests',
+  creditsDeducted: 'Deducted',
+  noCredits: 'Nothing deducted',
+  per1mCredits: 'Credits / 1M tokens',
+  capTool: 'Tools',
+  capVision: 'Vision',
+  capThinking: 'Thinking always on',
+  underRate: 'Effective rate ≤',
+  countUnit: 'total',
+  noLowRateModel: 'No model is currently under the effective-rate threshold',
 
-  hourlyTrend: 'Hourly trend',
-  hourlyTrendHint: 'Credits consumed each hour',
-
-  creditHistory: 'Credit deduction history',
-  byAccount: 'By account',
-  byModel: 'By model',
-  account: 'Account',
-  creditsDeducted: 'Credits deducted',
-  creditsDeductedHint: 'Summed from upstream usage.credit',
-  matchedTokens: 'Matched tokens',
-  matchedTokensHint: 'Tokens observed alongside a credit figure',
-  avgPer1m: 'Avg credits / 1M tokens',
-  avgPer1mHint: 'Lower is cheaper',
-  creditSamples: 'Valid credit samples',
-  creditSamplesHint: 'History missing the field is excluded',
-  cacheHitHint: 'Upstream prefix-cache hit / (hit + miss); a low rate multiplies cost',
-  sampleTokens: 'Sample tokens',
-  per1m: 'Credits / 1M tokens',
-  creditEmpty: 'No credit deductions recorded yet; token-only history never fabricates credits.',
-  unitAccounts: 'accounts',
-  unitModelGroups: 'model rate groups',
-  creditOnlyObserved: 'counts only tokens observed alongside credits',
-
-  noData: 'No data',
-  scopeNote: 'The gateway aggregates hourly and has no session dimension: this is the whole period, not one session.',
+  accounts: 'Accounts',
+  creditsUnit: 'credits',
+  realmCn: 'China',
+  realmGlobal: 'Global',
+  available: 'Available',
+  rateLimited: 'rate limited',
+  unlockAt: 'Unlocks',
+  noAccounts: 'The gateway has no accounts yet',
 }
 
 /** 断言两本字典键一致 —— 由 scripts/check-locale.mjs 调用。 */

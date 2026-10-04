@@ -1,458 +1,510 @@
 /**
- * 「积分余额」设置页 —— 账户总览 + 用量明细 + 积分扣除历史。
+ * 「积分余额」设置页 —— 三段，从上到下。
  *
- * 布局（用户指定）：
+ * | 段 | 仿谁 | 内容 |
+ * | --- | --- | --- |
+ * | 概览 | 外观设置的三栏立方体 | 剩余/总额、积分 / 1M Token、缓存命中率 |
+ * | 模型 | 会话插件的可折叠卡 | 生效倍率低于阈值的全部模型 |
+ * | 账号 | Agent 预设卡 | 国内 / 国际账号与限流状态 |
  *
- * 1. **一行总览** —— 账户合计与四张本期 KPI 同排，不再铺账户卡片。
- * 2. **小时趋势** —— 什么时候花得最多（一根柱 = 一小时）。
- * 3. **模型倍率** —— 已添加的模型逐个对着网关倍率，贵的排在最上面。
- * 4. **积分扣除历史** —— 照搬网关面板那个板块：按账号 / 按模型两个维度、
- *    五张折算卡与完整表格（倍率、请求、扣除积分、有效样本 Token、
- *    积分 / 1M Token、缓存命中率）。
+ * ## 排版是照抄原生设置页的，不是自己发明的
  *
- * 第 4 段的格式化逐值对齐网关面板自身（见 `format.js` 的 gateway* 系列），
- * 所以同一个数字在网关页和这里长得一样。
+ * 数值全部来自 `app.asar` 里 `dsh-client-ui-*` 的实际 CSS：
+ * 内容区 564px（面板 800 − 导航 188 − padding 48）、正文 13px/22px、
+ * 卡片 `radius-xl` 20px + `settings-card-stroke` 的 0.5px hairline、
+ * 卡片两列 `repeat(2, minmax(0,1fr))` gap 10px。改任何一项前先回去看原生。
  *
- * 底部一行说明不能省：网关按小时聚合、没有会话维度，也没有人民币价格。
+ * ## 三条硬约束
+ *
+ * 1. **没有自己的页头**。标题、描述、图标由原生设置菜单渲染，这里自己再画
+ *    一次就是重复。
+ * 2. **颜色只留给状态**。原生只有三级文字色 + 四个状态色，层级靠字号、字重、
+ *    色深区分。把「免费」「国内」这类普通事实染成彩色，是在暗示它们更重要。
+ * 3. **同一张卡里同一个数字只出现一次**。收起态已经显示的，展开区不再重复。
+ *
+ * ## 卡片必须能自己长出来
+ *
+ * 模型与账号都是从快照数组 map 出来的，没有任何写死的条目 —— 网关新增模型
+ * 或账号后，下一次轮询就多一张卡，结构代码一行都不用动。
  *
  * @module client/CreditsDashboard.jsx
  */
 
 import React from 'react'
+import { LOW_RATE_THRESHOLD } from '../shared/constants.js'
 
 const page = {
   fontFamily: 'inherit',
   fontSize: '13px',
+  lineHeight: '22px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-  padding: '20px',
-  color: 'var(--text-primary, currentColor)',
-}
-
-const card = {
-  padding: '10px 12px',
-  borderRadius: '10px',
-  border: '1px solid var(--border, rgba(128,128,128,.22))',
-  background: 'var(--surface, rgba(128,128,128,.05))',
+  gap: '16px',
+  padding: '8px 0',
+  color: 'var(--dsw-alias-label-primary, inherit)',
   minWidth: 0,
 }
 
-const cardLabel = { fontSize: '11px', opacity: 0.65, marginBottom: '4px' }
-const cardValue = { fontSize: '18px', fontWeight: 600, fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }
-const cardSub = { fontSize: '11px', opacity: 0.55, marginTop: '2px' }
+/* ── 文字三级 + 状态色 ── */
+const label = { primary: 'var(--dsw-alias-label-primary, inherit)', secondary: 'var(--dsw-alias-label-secondary, inherit)', tertiary: 'var(--dsw-alias-label-tertiary, inherit)' }
+const state = { warn: 'var(--dsw-alias-state-warn-primary, #f2b94b)', error: 'var(--dsw-alias-state-error-primary, #e5484d)' }
 
-const section = { display: 'flex', flexDirection: 'column', gap: '8px' }
-const sectionTitle = { fontSize: '12px', fontWeight: 600, opacity: 0.85 }
-const hint = { fontSize: '12px', opacity: 0.6 }
-
-const table = { width: '100%', borderCollapse: 'collapse', fontSize: '12px' }
-const th = {
-  textAlign: 'left',
-  fontWeight: 500,
-  opacity: 0.55,
-  padding: '4px 8px',
-  borderBottom: '1px solid var(--border, rgba(128,128,128,.18))',
-  whiteSpace: 'nowrap',
+/* ── 概览三栏 ── */
+const cubeGroup = { display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 0' }
+const cubeGroupTitle = { fontSize: '14px', fontWeight: 400, lineHeight: '22px' }
+const cubeRow = { display: 'flex', alignItems: 'stretch', gap: '8px' }
+const cube = {
+  flex: 1,
+  minWidth: 0,
+  border: '0.5px solid var(--dsw-alias-border-l4, rgba(128,128,128,.24))',
+  borderRadius: 'var(--dsw-radius-xl, 20px)',
+  background: 'transparent',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '20px 12px',
+  boxSizing: 'border-box',
 }
-const thNum = { ...th, textAlign: 'right' }
-const td = {
-  padding: '6px 8px',
-  borderBottom: '1px solid var(--border, rgba(128,128,128,.10))',
+const cubeValue = {
+  fontSize: '22px',
+  lineHeight: '28px',
+  fontWeight: 600,
   fontVariantNumeric: 'tabular-nums',
+  letterSpacing: '-.01em',
   whiteSpace: 'nowrap',
 }
-const tdNum = { ...td, textAlign: 'right' }
-const tdName = { ...td, whiteSpace: 'normal', wordBreak: 'break-all', maxWidth: '240px' }
+const cubeLabel = { fontSize: '12px', lineHeight: '18px', color: label.secondary, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
 
-/** 一行放账户合计 + 四张 KPI —— 用户要求合并成一行。 */
-const overviewRow = {
+/* ── 分组标题 ── */
+const groupHead = { display: 'flex', alignItems: 'baseline', gap: '8px', minHeight: '36px' }
+const groupTitle = { fontSize: '13px', fontWeight: 600, lineHeight: '22px' }
+const groupSub = { fontSize: '12px', lineHeight: '18px', color: label.tertiary }
+
+/* ── 卡片网格：显式两列 ── */
+const cards = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+  // 显式两列，不能用 auto-fill：容器稍窄一点它就塌成一列，一长条很难扫。
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: '10px',
+  margin: 0,
+  padding: 0,
+  listStyle: 'none',
 }
-const creditKpiRow = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-  gap: '10px',
-}
-const barTrack = { height: '6px', borderRadius: '99px', background: 'rgba(128,128,128,.22)', overflow: 'hidden' }
+const cardsPreset = { ...cards, gap: '12px' }
 
-/** 四角星积分图标 —— 与状态栏 pill、账户合计同一形状。 */
-export function CreditMark({ size = 22 }) {
-  return React.createElement(
-    'svg',
-    { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true },
-    React.createElement('path', { d: 'M12 1.7l1.7 6.6L20.3 10l-6.6 1.7L12 18.3l-1.7-6.6L3.7 10l6.6-1.7L12 1.7z', fill: 'currentColor' }),
-  )
-}
-
-function Bar({ value, max, label, title }) {
-  const ratio = max > 0 ? Math.max(0.02, value / max) : 0
-  return React.createElement(
-    'div',
-    { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }, title },
-    React.createElement(
-      'div',
-      { style: { display: 'flex', alignItems: 'flex-end', height: '56px', width: '100%' } },
-      React.createElement('div', {
-        style: {
-          width: '100%',
-          height: `${ratio * 100}%`,
-          borderRadius: '3px 3px 0 0',
-          background: 'var(--accent, #4c8dff)',
-          opacity: value > 0 ? 0.9 : 0.25,
-        },
-      }),
-    ),
-    React.createElement('span', { style: { fontSize: '10px', opacity: 0.6 } }, label),
-  )
+const cardShell = {
+  border: '0.5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l4, rgba(128,128,128,.24)))',
+  borderRadius: 'var(--dsw-radius-xl, 20px)',
+  background: 'var(--dsw-alias-settings-card-fill, transparent)',
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 0,
+  overflow: 'hidden',
+  transition: 'border-color .16s, background .16s',
 }
 
-function Kpi({ label, value, sub, accent }) {
-  return React.createElement(
-    'div',
-    { style: { ...card, ...(accent ? { borderLeft: `3px solid ${accent}` } : {}) } },
-    React.createElement('div', { style: cardLabel }, label),
-    React.createElement('div', { style: cardValue }, value),
-    sub ? React.createElement('div', { style: cardSub }, sub) : null,
-  )
+/* ── 可折叠卡 ── */
+const foldMain = {
+  appearance: 'none',
+  font: 'inherit',
+  color: 'inherit',
+  textAlign: 'left',
+  cursor: 'pointer',
+  background: 'transparent',
+  border: 0,
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2px',
+  padding: '12px 14px',
+  alignItems: 'stretch',
 }
+const foldHead = { display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }
+const foldTitle = { flex: 1, minWidth: 0, fontSize: '14px', fontWeight: 500, lineHeight: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+const foldTrailing = { flex: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: label.tertiary }
+const foldDesc = {
+  fontSize: '12px',
+  lineHeight: '18px',
+  color: label.tertiary,
+  overflow: 'hidden',
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+}
+const foldMeta = { marginTop: 'auto', paddingTop: '6px', display: 'flex' }
+const foldDetails = { display: 'none', borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,.12))', background: 'var(--dsw-alias-bg-module-platform, transparent)', padding: '10px 14px 12px' }
+const facts = { display: 'grid', gridTemplateColumns: '68px minmax(0, 1fr)', gap: '6px 10px', margin: 0 }
+const factKey = { fontSize: '11px', lineHeight: '17px', color: label.tertiary }
+const factVal = { margin: 0, fontSize: '12px', lineHeight: '17px', color: label.secondary, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
 
-function ModelRateTable({ matches, t, fmt }) {
-  if (!matches?.length) return null
-  return React.createElement(
-    'div',
-    { style: section },
-    React.createElement('div', { style: sectionTitle }, t('modelRates')),
-    React.createElement('div', { style: hint }, t('modelRatesHint')),
-    React.createElement(
-      'table',
-      { style: table },
-      React.createElement(
-        'thead',
-        null,
-        React.createElement(
-          'tr',
-          null,
-          React.createElement('th', { style: th }, t('model')),
-          React.createElement('th', { style: th }, t('multiplier')),
-          React.createElement('th', { style: thNum }, t('requests')),
-          React.createElement('th', { style: thNum }, t('creditsCol')),
-          React.createElement('th', { style: thNum }, t('tokensCol')),
-        ),
-      ),
-      React.createElement(
-        'tbody',
-        null,
-        matches.map((m) =>
-          React.createElement(
-            'tr',
-            { key: m.id },
-            React.createElement('td', { style: tdName }, m.id),
-            React.createElement(
-              'td',
-              { style: { ...td, color: m.multiplier === 0 ? 'var(--success, #30a46c)' : undefined } },
-              m.known ? fmt.multiplier(m.multiplier) : t('unknownRate'),
-            ),
-            React.createElement('td', { style: tdNum }, m.requests > 0 ? fmt.tokens(m.requests) : '—'),
-            React.createElement('td', { style: tdNum }, m.requests > 0 ? fmt.gatewayCredit(m.credits) : t('unused')),
-            React.createElement('td', { style: tdNum }, m.requests > 0 ? fmt.compact(m.tokens) : '—'),
-          ),
-        ),
-      ),
-    ),
-  )
+/* ── 补充说明行：模型 chip 与账号 footer 共用，字形必须完全一致 ──
+   `fontFamily: 'inherit'` 是必需的：模型那侧挂在 <code> 上过，浏览器给
+   code 的默认字体是等宽体，漏掉这一行字号对上了字形仍然一眼不同。 */
+const noteLine = {
+  fontFamily: 'inherit',
+  fontSize: '12px',
+  lineHeight: '18px',
+  fontWeight: 400,
+  color: label.secondary,
+  padding: '1px 6px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  fontVariantNumeric: 'tabular-nums',
 }
+const cardIdentity = { ...noteLine, borderRadius: 'var(--dsw-radius-xs, 4px)', background: 'var(--dsw-alias-bg-module-platform, transparent)', maxWidth: '100%' }
+const footLink = { ...noteLine, borderRadius: 'var(--dsw-radius-sm, 8px)' }
 
-function HourlyTrend({ series, t, fmt }) {
-  if (!series?.length) return null
-  const max = Math.max(...series.map((point) => point.credits), 0.0001)
-  return React.createElement(
-    'div',
-    { style: section },
-    React.createElement('div', { style: sectionTitle }, t('hourlyTrend')),
-    React.createElement('div', { style: hint }, t('hourlyTrendHint')),
-    React.createElement(
-      'div',
-      { style: { display: 'flex', alignItems: 'flex-end', gap: '4px' } },
-      series.map((point) =>
-        React.createElement(Bar, {
-          key: point.t,
-          value: point.credits,
-          max,
-          label: fmt.hourLabel(point.t),
-          title: `${fmt.hourLabel(point.t)} · ${fmt.gatewayCredit(point.credits)} · ${fmt.tokens(point.requests)} 次请求`,
-        }),
-      ),
-    ),
-  )
+/* ── Tag：胶囊 999px + corner-shape: round ──
+   后者是必须的：原生用通配选择器全局施加 superellipse(1.5)，不写
+   corner-shape: round 的话胶囊会被压成椭圆。
+   配色档位见下面 `Tag` 的注释。 */
+const tag = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  borderRadius: '999px',
+  cornerShape: 'round',
+  padding: '1px 8px',
+  fontSize: '11px',
+  lineHeight: '17px',
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+  boxSizing: 'border-box',
 }
-
-/** 缓存命中率单元格：带健康色与命中/未命中绝对量。 */
-function CacheCell({ row, fmt }) {
-  const text = fmt.cacheRate(row.cacheHitTokens, row.cacheMissTokens)
-  if (text === fmt.EMPTY) return React.createElement('span', { style: { opacity: 0.5 } }, text)
-  return React.createElement(
-    'span',
-    {
-      style: { color: fmt.cacheColor(row.cacheHitTokens, row.cacheMissTokens) },
-      title: `命中 ${fmt.gatewayTokens(row.cacheHitTokens)} / 未命中 ${fmt.gatewayTokens(row.cacheMissTokens)} tok`,
-    },
-    text,
-  )
-}
+const tagOutline = { ...tag, border: '0.5px solid var(--dsw-alias-border-l4, rgba(128,128,128,.24))', color: label.tertiary }
+const tagNeutral = { ...tag, background: 'var(--dsw-alias-bg-module-platform, transparent)', color: label.secondary }
+const tagWarning = { ...tag, background: 'color-mix(in srgb, var(--dsw-alias-state-warn-primary, #f2b94b) 12%, transparent)', color: state.warn }
 
 /**
- * 积分扣除历史 —— 照搬网关面板：按账号 / 按模型两个维度共用一张表。
- *
- * 两个维度列数不同（模型多一列倍率），所以表头按维度切换。
+ * 一枚 Tag。`tone` 同时写到 `data-tone` 上而不只是内联样式 ——
+ * 内联样式没法在渲染结果里反查「这一枚用的是哪档配色」，而配色档位正是
+ * 这个页面最容易被后来者加乱的地方，得能测。
  */
-function CreditHistory({ snapshot, t, fmt }) {
-  const [dimension, setDimension] = React.useState('model')
-  const totals = snapshot?.creditTotals
-  const models = snapshot?.creditModels ?? []
-  const accounts = snapshot?.creditAccounts ?? []
-  const rows = dimension === 'model' ? models : accounts
+function Tag({ tone, children }) {
+  const style = tone === 'warning' ? tagWarning : (tone === 'outline' ? tagOutline : tagNeutral)
+  return React.createElement('span', { style, 'data-tone': tone }, children)
+}
 
-  const tabs = [
-    { id: 'account', label: t('byAccount'), count: accounts.length },
-    { id: 'model', label: t('byModel'), count: models.length },
-  ]
+/* ── 账号卡 ── */
+const presetMain = { padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }
+const presetHead = { display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }
+const presetName = { fontSize: '15px', fontWeight: 600, lineHeight: '1.4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
+const presetId = { flexShrink: 0, marginLeft: 'auto', fontFamily: 'var(--dsw-font-mono, ui-monospace, monospace)', fontSize: '11px', lineHeight: '21px', color: label.tertiary }
+const presetDesc = { color: label.secondary, fontSize: '13px', lineHeight: '1.55', marginBlock: 'auto', overflowWrap: 'anywhere' }
+const presetFoot = { borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,.12))', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', padding: '6px 10px', justifyContent: 'flex-start' }
 
-  const tabBar = React.createElement(
-    'div',
-    { style: { display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' } },
-    React.createElement('span', { style: { ...sectionTitle, marginRight: '2px' } }, t('creditHistory')),
-    tabs.map((tab) =>
-      React.createElement(
-        'button',
-        {
-          key: tab.id,
-          type: 'button',
-          onClick: () => setDimension(tab.id),
-          style: {
-            border: '1px solid var(--border, rgba(128,128,128,.25))',
-            borderRadius: '6px',
-            padding: '3px 9px',
-            fontSize: '11.5px',
-            cursor: 'pointer',
-            background: dimension === tab.id ? 'var(--accent, #4c8dff)' : 'transparent',
-            color: dimension === tab.id ? '#fff' : 'inherit',
-          },
-        },
-        `${tab.label} ${tab.count}`,
-      ),
-    ),
-    React.createElement(
-      'span',
-      { style: { ...hint, marginLeft: 'auto' } },
-      `${accounts.length} ${t('unitAccounts')} · ${models.length} ${t('unitModelGroups')} · ${t('creditOnlyObserved')}`,
-    ),
+/* ── 刷新按钮：照 RotMhW_failure button ── */
+const iconBtn = {
+  border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,.16))',
+  borderRadius: 'var(--dsw-radius-sm, 8px)',
+  color: label.primary,
+  background: 'transparent',
+  cursor: 'pointer',
+  font: 'inherit',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '4px 10px',
+  fontSize: '12px',
+  lineHeight: '18px',
+}
+const headEnd = { marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '8px' }
+
+const empty = { fontSize: '13px', lineHeight: '20px', color: label.tertiary, padding: '12px 2px' }
+
+/** 折叠箭头：展开时旋转 180°。尺寸跟原生 IconChevronDownOutlineRegular 的 12。 */
+function Chevron({ open }) {
+  return React.createElement(
+    'svg',
+    {
+      width: 12,
+      height: 12,
+      viewBox: '0 0 16 16',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: 1.5,
+      'aria-hidden': 'true',
+      style: { flex: 'none', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .16s' },
+    },
+    React.createElement('path', { d: 'M4 6.5l4 4 4-4' }),
   )
+}
 
-  const kpis = totals
-    ? React.createElement(
-        'div',
-        { style: creditKpiRow },
-        React.createElement(Kpi, {
-          label: t('creditsDeducted'),
-          value: fmt.gatewayCredit(totals.credits),
-          sub: t('creditsDeductedHint'),
-          accent: 'var(--accent, #4c8dff)',
-        }),
-        React.createElement(Kpi, {
-          label: t('matchedTokens'),
-          value: fmt.gatewayTokens(totals.creditTokens),
-          sub: t('matchedTokensHint'),
-        }),
-        React.createElement(Kpi, {
-          label: t('avgPer1m'),
-          value: fmt.gatewayCreditRatio(totals.creditsPer1m, totals.creditSamples, totals.creditTokens),
-          sub: t('avgPer1mHint'),
-          accent: 'var(--success, #30a46c)',
-        }),
-        React.createElement(Kpi, {
-          label: t('creditSamples'),
-          value: String(totals.creditSamples || 0),
-          sub: t('creditSamplesHint'),
-        }),
-        React.createElement(Kpi, {
-          label: t('cacheHit'),
-          value: fmt.cacheRate(totals.cacheHitTokens, totals.cacheMissTokens),
-          sub: t('cacheHitHint'),
-        }),
-      )
-    : null
-
-  const head = React.createElement(
-    'thead',
-    null,
-    React.createElement(
-      'tr',
-      null,
-      React.createElement('th', { style: th }, dimension === 'model' ? t('model') : t('account')),
-      dimension === 'model' ? React.createElement('th', { style: th }, t('multiplier')) : null,
-      React.createElement('th', { style: thNum }, t('requests')),
-      React.createElement('th', { style: thNum }, t('creditsDeducted')),
-      React.createElement('th', { style: thNum }, t('sampleTokens')),
-      React.createElement('th', { style: thNum }, t('per1m')),
-      React.createElement('th', { style: thNum }, t('cacheHit')),
-    ),
+/** 刷新图标。 */
+function RefreshIcon() {
+  return React.createElement(
+    'svg',
+    { width: 14, height: 14, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: { flex: 'none' } },
+    React.createElement('path', { d: 'M13.5 8a5.5 5.5 0 1 1-1.6-3.9' }),
+    React.createElement('path', { d: 'M13.2 2.6v2.6h-2.6' }),
   )
+}
 
-  const body = React.createElement(
-    'tbody',
-    null,
-    rows.length === 0
-      ? React.createElement(
-          'tr',
-          null,
-          React.createElement('td', { style: { ...td, opacity: 0.6 }, colSpan: dimension === 'model' ? 7 : 6 }, t('creditEmpty')),
-        )
-      : rows.map((row) =>
-          React.createElement(
-            'tr',
-            { key: `${dimension}:${row.key}` },
-            React.createElement(
-              'td',
-              { style: tdName },
-              dimension === 'model'
-                ? row.key
-                : React.createElement(
-                    React.Fragment,
-                    null,
-                    row.nickname || row.key.slice(0, 8) || '—',
-                    React.createElement(
-                      'div',
-                      { style: { fontSize: '10.5px', opacity: 0.55 } },
-                      `${row.realm || ''} · ${row.key.slice(0, 8)}`,
-                    ),
-                  ),
-            ),
-            dimension === 'model' ? React.createElement('td', { style: td }, fmt.gatewayRate(row.rate)) : null,
-            React.createElement('td', { style: tdNum }, fmt.gatewayTokens(row.requests)),
-            React.createElement('td', { style: tdNum }, fmt.gatewayCredit(row.credits)),
-            React.createElement('td', { style: tdNum }, fmt.gatewayTokens(row.creditTokens)),
-            React.createElement('td', { style: tdNum }, fmt.gatewayCreditRatio(row.creditsPer1m, row.creditSamples, row.creditTokens)),
-            React.createElement('td', { style: tdNum }, React.createElement(CacheCell, { row, fmt })),
-          ),
-        ),
-  )
+/** 数字转千分位；非有限值一律占位符，绝不显示 undefined / NaN。 */
+function thousands(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value).toLocaleString('en-US') : fmt.EMPTY
+}
+
+/** 概览三栏。`onRefresh` 触发的是整页重新取数，不只是顶部那三个数字。 */
+function Overview({ snapshot, t, fmt }) {
+  const accounts = snapshot.accountCards ?? []
+  const credit = snapshot.creditTotals
+
+  const totalCredits = accounts.reduce((sum, item) => sum + item.credits, 0)
+  const totalCapacity = accounts.reduce((sum, item) => sum + item.creditsTotal, 0)
 
   return React.createElement(
     'div',
-    { style: section },
-    tabBar,
-    kpis,
-    React.createElement('table', { style: table }, head, body),
+    { style: cubeGroup },
+    React.createElement(
+      'div',
+      { style: groupHead },
+      React.createElement('span', { style: cubeGroupTitle }, t('creditsGroup')),
+      React.createElement(
+        'span',
+        { style: headEnd },
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            style: iconBtn,
+            onClick: snapshot.onRefresh,
+            disabled: snapshot.loading === true,
+            title: t('refreshHint'),
+            'aria-busy': snapshot.loading === true,
+          },
+          React.createElement(RefreshIcon),
+          React.createElement('span', null, snapshot.loading === true ? t('refreshing') : t('refresh')),
+        ),
+      ),
+    ),
+    React.createElement(
+      'div',
+      { style: cubeRow },
+      React.createElement(
+        'div',
+        { style: cube },
+        React.createElement('div', { style: cubeValue }, fmt.tokens(totalCredits), React.createElement('small', { style: { fontSize: '13px', fontWeight: 400, color: label.secondary } }, `/${fmt.tokens(totalCapacity)}`)),
+        React.createElement('div', { style: cubeLabel }, t('balanceRatio')),
+      ),
+      React.createElement(
+        'div',
+        { style: cube },
+        React.createElement('div', { style: cubeValue }, fmt.rateNumber(credit?.creditsPer1m)),
+        React.createElement('div', { style: cubeLabel }, t('avgPer1m')),
+      ),
+      React.createElement(
+        'div',
+        { style: cube },
+        React.createElement('div', { style: cubeValue }, fmt.cacheRate(credit?.cacheHitTokens, credit?.cacheMissTokens), React.createElement('small', { style: { fontSize: '13px', fontWeight: 400, color: label.secondary } }, '')),
+        React.createElement('div', { style: cubeLabel }, t('cacheHit')),
+      ),
+    ),
+  )
+}
+
+/** 模型卡：收起态显示倍率与积分，展开态只补收起时看不到的三项。 */
+function ModelCard({ row, t, fmt }) {
+  const [open, setOpen] = React.useState(false)
+  const supports = [
+    row.supportsToolCall ? t('capTool') : null,
+    row.supportsImages ? t('capVision') : null,
+    row.supportsReasoning ? t('capThinking') : null,
+  ].filter(Boolean)
+  const desc = [...supports, row.promoLabel].filter(Boolean).join(' · ') || fmt.EMPTY
+  const detailId = React.useId()
+
+  return React.createElement(
+    'li',
+    // 展开态的边框色必须与常态**同一个变量**，不能换成 border-l3。
+    // 换成低一档时：折叠按钮自带 `border: 0`，浏览器会把这条 border-color
+    // 当成未指定而回退到最亮的默认边框色 —— 实测描边从 86飙到 250（纯白），
+    // 整排卡片像被点亮。所以展开只改底色，边框一律走cardShell。
+    { style: cardShell },
+    React.createElement(
+      'button',
+      {
+        type: 'button',
+        style: { ...foldMain, background: open ? 'var(--dsw-alias-interactive-bg-hover, transparent)' : 'transparent' },
+        'aria-expanded': open,
+        'aria-controls': detailId,
+        onClick: () => setOpen((value) => !value),
+      },
+      React.createElement(
+        'span',
+        { style: foldHead },
+        React.createElement('strong', { style: foldTitle, title: row.id }, row.id),
+        React.createElement(
+          'span',
+          { style: foldTrailing },
+          React.createElement(Tag, { key: 'rate', tone: 'neutral' }, fmt.rateNumber(row.multiplier)),
+          React.createElement(Chevron, { open }),
+        ),
+      ),
+      React.createElement('span', { style: { ...foldDesc, display: open ? 'block' : '-webkit-box' } }, desc),
+      React.createElement(
+        'span',
+        { style: foldMeta },
+        // 「32.92 积分」有歧义：是剩余、是倍率、还是本次消耗？写全才不含糊。
+        React.createElement('span', { style: cardIdentity }, row.requests > 0 ? `${t('creditsDeducted')} ${fmt.gatewayCredit(row.credits)}` : t('noCredits')),
+      ),
+    ),
+    React.createElement(
+      'div',
+      { id: detailId, style: { ...foldDetails, display: open ? 'block' : 'none' } },
+      React.createElement(
+        'dl',
+        { style: facts },
+        React.createElement('dt', { style: factKey }, t('requests')),
+        React.createElement('dd', { style: factVal }, row.requests > 0 ? thousands(row.requests, fmt) : fmt.EMPTY),
+        React.createElement('dt', { style: factKey }, t('cacheHit')),
+        React.createElement('dd', { style: factVal }, fmt.cacheRate(row.cacheHitTokens, row.cacheMissTokens)),
+        React.createElement('dt', { style: factKey }, t('per1mCredits')),
+        React.createElement('dd', { style: factVal }, fmt.gatewayCreditRatio(row.creditsPer1m, 1, row.cacheHitTokens + row.cacheMissTokens)),
+      ),
+    ),
+  )
+}
+
+/** 模型板块。数组是活的：网关新增模型后多一条就多一张卡。 */
+function ModelSection({ models, t, fmt }) {
+  const rows = models ?? []
+  const rateText = `${LOW_RATE_THRESHOLD}`
+  return React.createElement(
+    'div',
+    null,
+    React.createElement(
+      'div',
+      { style: groupHead },
+      React.createElement('span', { style: groupTitle }, t('model')),
+      React.createElement('span', { style: groupSub }, `${t('underRate')} ${rateText} · ${rows.length} ${t('countUnit')}`),
+    ),
+    rows.length === 0
+      ? React.createElement('div', { style: empty }, t('noLowRateModel'))
+      : React.createElement(
+          'ul',
+          { style: cards },
+          rows.map((row) => React.createElement(ModelCard, { key: row.id, row, t, fmt })),
+        ),
+  )
+}
+
+/** 账号名去掉邮箱后缀 —— `vithur0710@gmail.com` 读成 `vithur0710`。 */
+function shortName(nickname) {
+  return String(nickname ?? '').replace(/@.*$/, '')
+}
+
+/** 账号卡。 */
+function AccountCard({ account, t, fmt }) {
+  const isCn = account.realm === 'cn'
+  const limited = account.limited ?? []
+  const head = limited[0]
+  const unlockAt = head ? (head.resetAt ?? head.until) : null
+
+  let footer
+  if (head) {
+    footer = [
+      React.createElement(Tag, { key: 'tag', tone: 'warning' }, `${head.model} ${t('rateLimited')}`),
+      unlockAt === null ? null : React.createElement('span', { key: 'at', style: footLink, title: `${t('unlockAt')} ${fmt.clockAt(unlockAt)}` }, `${t('unlockAt')} ${fmt.clockAt(unlockAt)}`),
+    ]
+  } else {
+    footer = React.createElement('span', { style: footLink }, t('available'))
+  }
+
+  return React.createElement(
+    'li',
+    { style: cardShell },
+    React.createElement(
+      'div',
+      { style: presetMain },
+      React.createElement(
+        'div',
+        { style: presetHead },
+        React.createElement('span', { style: presetName, title: account.nickname }, shortName(account.nickname)),
+        React.createElement(Tag, { key: 'realm', tone: 'outline' }, isCn ? t('realmCn') : t('realmGlobal')),
+        React.createElement('span', { style: presetId }, account.realm),
+      ),
+      React.createElement(
+        'div',
+        { style: presetDesc },
+        `${fmt.gatewayCredit(account.credits)}${account.creditsTotal > 0 ? ` / ${fmt.gatewayCredit(account.creditsTotal)}` : ''} ${t('creditsUnit')}`,
+      ),
+    ),
+    React.createElement('div', { style: presetFoot }, footer),
+  )
+}
+
+/** 账号板块。国内 / 国际混排，靠卡片上的 Tag 区分 —— 原生也是这么并列的。 */
+function AccountSection({ accounts, t, fmt }) {
+  const rows = accounts ?? []
+  return React.createElement(
+    'div',
+    null,
+    React.createElement(
+      'div',
+      { style: groupHead },
+      React.createElement('span', { style: groupTitle }, t('accounts')),
+      React.createElement('span', { style: groupSub }, `${rows.length} ${t('countUnit')}`),
+    ),
+    rows.length === 0
+      ? React.createElement('div', { style: empty }, t('noAccounts'))
+      : React.createElement(
+          'ul',
+          { style: cardsPreset },
+          rows.map((account) => React.createElement(AccountCard, {
+            key: account.uid || `${account.realm}-${account.nickname}`,
+            account,
+            t,
+            fmt,
+          })),
+        ),
   )
 }
 
 /** 设置页主体。 */
 export function CreditsDashboard({ t, fmt, useSnapshot, pollMs, ...rest }) {
-  const { snapshot, error, loading, refresh, at } = useSnapshot({ pollMs })
-  const totals = snapshot?.totals
-  const balances = snapshot?.balances ?? []
+  const { snapshot, error, loading, refresh } = useSnapshot({ pollMs })
 
   const state = React.useMemo(() => {
     if (error) return { kind: 'error', text: error }
     if (!snapshot) return { kind: 'loading', text: t('loading') }
     if (snapshot.ok === false) return { kind: 'error', text: snapshot.error ?? t('unreachable') }
-    if (!totals && balances.length === 0) return { kind: 'empty', text: t('noData') }
+    const empty = (snapshot.accountCards?.length ?? 0) === 0 && (snapshot.models?.length ?? 0) === 0
+    if (empty) return { kind: 'empty', text: t('noData') }
     return { kind: 'ready' }
-  }, [error, snapshot, totals, balances.length, t])
+  }, [error, snapshot, t])
 
   if (state.kind === 'loading') {
     return React.createElement('div', { style: { ...page, opacity: 0.7, ...rest } }, state.text)
   }
+
   if (state.kind === 'error' || state.kind === 'empty') {
     return React.createElement(
       'div',
       { style: { ...page, gap: '10px', ...rest } },
-      React.createElement('h2', { style: { margin: 0, fontSize: '15px', color: state.kind === 'error' ? 'var(--danger, #e5484d)' : undefined } }, t('balancePage')),
-      React.createElement('div', { style: { fontSize: '12px', opacity: 0.7 } }, state.text),
+      React.createElement('div', { style: { fontSize: '13px', color: state.kind === 'error' ? state.error : undefined } }, state.text),
       React.createElement(
         'button',
         {
           type: 'button',
           onClick: refresh,
-          style: {
-            alignSelf: 'flex-start',
-            padding: '5px 12px',
-            borderRadius: '6px',
-            border: '1px solid var(--border, rgba(128,128,128,.3))',
-            background: 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            fontSize: '12px',
-          },
+          disabled: loading,
+          style: { ...iconBtn, alignSelf: 'flex-start' },
         },
         t('retry'),
       ),
     )
   }
 
-  const totalCredits = balances.reduce((sum, item) => sum + item.credits, 0)
-  const totalCapacity = balances.reduce((sum, item) => sum + item.creditsTotal, 0)
-  const totalExpiring = balances.reduce((sum, item) => sum + item.creditsExpiring, 0)
-  const remainingPercent = totalCapacity > 0 ? (totalCredits / totalCapacity) * 100 : 0
-
   return React.createElement(
     'div',
     { style: { ...page, ...rest } },
-    React.createElement(
-      'div',
-      { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-      React.createElement(CreditMark, { size: 26 }),
-      React.createElement(
-        'div',
-        null,
-        React.createElement('h2', { style: { margin: 0, fontSize: '15px' } }, t('balancePage')),
-        React.createElement('p', { style: { ...hint, margin: 0 } }, t('balanceHint')),
-      ),
-      at ? React.createElement('span', { style: { ...hint, marginLeft: 'auto' } }, `${t('updatedAt')} ${fmt.relativeTime(new Date(at).toISOString())}`) : null,
-    ),
-
-    // —— 一行总览：账户合计 + 四张本期 KPI ——
-    React.createElement(
-      'div',
-      { style: overviewRow },
-      React.createElement(
-        'div',
-        { style: { ...card, display: 'flex', flexDirection: 'column', justifyContent: 'center' } },
-        React.createElement('div', { style: { ...cardLabel, display: 'flex', alignItems: 'center', gap: '6px' } },
-          React.createElement(CreditMark, { size: 15 }),
-          t('totalBalance'),
-        ),
-        React.createElement('div', { style: cardValue }, fmt.credits(totalCredits)),
-        React.createElement('div', { style: barTrack }, React.createElement('div', {
-          style: {
-            width: `${remainingPercent}%`,
-            height: '100%',
-            background: remainingPercent < 20 ? 'var(--danger, #e5484d)' : 'var(--accent, #4c8dff)',
-          },
-        })),
-        React.createElement('div', { style: cardSub }, `${t('ofCapacity')} ${fmt.credits(totalCapacity)} · ${t('expiring')} ${fmt.credits(totalExpiring)}`),
-      ),
-      React.createElement(Kpi, {
-        label: t('totalCredits'),
-        value: fmt.gatewayCredit(totals?.credits),
-        sub: `${t('since')} ${fmt.hourLabel(snapshot.since) || '—'}`,
-      }),
-      React.createElement(Kpi, {
-        label: t('requests'),
-        value: fmt.tokens(totals?.requests ?? 0),
-        sub: totals?.errors > 0 ? `${t('failed')} ${fmt.tokens(totals.errors)}` : t('allOk'),
-      }),
-      React.createElement(Kpi, { label: t('totalTokens'), value: fmt.compact(totals?.total_tokens ?? 0) }),
-      React.createElement(Kpi, { label: t('cacheHit'), value: fmt.percent(totals?.cache_hit_rate ?? 0, 1) }),
-    ),
-
-    React.createElement(HourlyTrend, { series: snapshot.series, t, fmt }),
-    React.createElement(ModelRateTable, { matches: snapshot.matches, t, fmt }),
-    React.createElement(CreditHistory, { snapshot, t, fmt }),
-
-    React.createElement('div', { style: { ...hint, borderTop: '1px solid var(--border, rgba(128,128,128,.14))', paddingTop: '8px', lineHeight: 1.6 } }, t('scopeNote')),
+    // refresh 是 useSnapshot 给的整页重取：它换掉整份 snapshot，
+    // 顶部三张卡、模型列表、账号列表一起更新，不只更新标题行那几个数。
+    React.createElement(Overview, { snapshot: { ...snapshot, onRefresh: refresh, loading }, t, fmt }),
+    React.createElement(ModelSection, { models: snapshot.models, t, fmt }),
+    React.createElement(AccountSection, { accounts: snapshot.accountCards, t, fmt }),
   )
 }

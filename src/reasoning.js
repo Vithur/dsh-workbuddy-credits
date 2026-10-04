@@ -149,7 +149,10 @@ export async function syncReasoningEfforts(ctx, gateway, options) {
   if (!listing) return { ok: false, reason: '网关不可达，保留现有档位配置' }
 
   const supported = new Map()
-  for (const model of listing.data ?? []) {
+  // gateway.models() 在出口统一成面板形状 `{ models: [...] }`，`/v1/models` 的
+  // `{ data: [...] }` 只是回退兼容 —— 这里两个键都要认，只读 data 会让面板
+  // 路径下 supported 永远为空，同步静默失败（实测发生过）。
+  for (const model of listing.models ?? listing.data ?? []) {
     if (!model || typeof model.id !== 'string') continue
     supported.set(model.id, {
       efforts: model.supported_efforts,

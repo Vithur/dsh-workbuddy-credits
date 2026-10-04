@@ -97,6 +97,51 @@ export function balancePercent(balance) {
   return Math.max(0, Math.min(100, (balance.credits / balance.creditsTotal) * 100))
 }
 
+/** 倍率数值 → `0.06`；去尾零，零显示 `0.00`（免费要看得出来是 0，不是缺数据）。 */
+export function rateNumber(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return EMPTY
+  return value.toFixed(2)
+}
+
+/** 大数缩写，取 1 位小数：`411.7M` / `1.25B`。 */
+export function shortTokens(value) {
+  const n = Number(value || 0)
+  if (!Number.isFinite(n)) return EMPTY
+  const abs = Math.abs(n)
+  if (abs >= 1e9) return (n / 1e9).toFixed(1) + 'B'
+  if (abs >= 1e6) return (n / 1e6).toFixed(1) + 'M'
+  if (abs >= 1e3) return (n / 1e3).toFixed(1) + 'k'
+  return String(Math.round(n))
+}
+
+/**
+ * 「还剩多久」—— 解封、冷却这类倒计时专用。
+ *
+ * 用 `d(remaining)` 不用 `relativeTime`：那个函数算的是「过去多久」，输入未来
+ * 时间戳会返回「刚刚」，正好把最需要强调的倒计时显示成零信息。
+ */
+export function countdown(ms, now = Date.now()) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return EMPTY
+  const remain = Math.round((ms - now) / 1000)
+  if (remain <= 0) return EMPTY
+  if (remain < 60) return `${remain} 秒`
+  if (remain < 3600) return `${Math.floor(remain / 60)} 分`
+  if (remain < 86400) return `${Math.floor(remain / 3600)} 小时`
+  return `${Math.floor(remain / 86400)} 天`
+}
+
+/** 毫秒 → 绝对时刻 `08:00`；跨天时补 `10-04`。 */
+export function clockAt(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return EMPTY
+  const date = new Date(ms)
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  const md = `${date.getMonth() + 1}-${String(date.getDate()).padStart(2, '0')}`
+  const today = new Date()
+  const todayMd = `${today.getMonth() + 1}-${String(today.getDate()).padStart(2, '0')}`
+  return md === todayMd ? `${hh}:${mm}` : `${md} ${hh}:${mm}`
+}
+
 // —— 以下为「积分扣除历史」专用：逐值对齐网关面板自身的格式化规则 ——
 // 用户要求把网关那个板块的信息原样显示出来，所以这里不自己发明缩写规则，
 // 否则同一个数字在两处会不一样。

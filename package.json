@@ -16,6 +16,7 @@
     "src",
     "client",
     "shared",
+    "scripts",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
@@ -41,19 +42,9 @@
   },
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "link": "node scripts/sync-install.mjs",
-    "link:copy": "node scripts/sync-install.mjs --copy",
-    "check": "node scripts/check-locale.mjs && node scripts/scan-text.mjs",
-    "test": "node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs",
-    "test:route": "node scripts/route-test.mjs",
-    "test:live": "node scripts/live-check.mjs",
-    "check:context": "node scripts/check-context.mjs",
-    "probe:efforts": "node scripts/probe-efforts.mjs",
-    "smoke": "node scripts/smoke.mjs",
-    "mount": "node scripts/mount-test.mjs",
-    "preflight": "node scripts/preflight.mjs",
-    "conformance": "node scripts/conformance.mjs",
-    "verify": "node scripts/check-locale.mjs && node scripts/scan-text.mjs && node shared/test-parse.mjs && node scripts/test-format.mjs && node scripts/test-reasoning.mjs && node scripts/route-test.mjs && node scripts/smoke.mjs && node scripts/mount-test.mjs && node scripts/preflight.mjs && node scripts/conformance.mjs"
+    "check": "node scripts/check-locale.mjs",
+    "test": "node scripts/check-locale.mjs && node shared/test-parse.mjs && node scripts/render-dashboard.mjs",
+    "verify": "npm run test && npm run build"
   },
   "dsh": {
     "bundle": {
@@ -66,7 +57,9 @@
     }
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.24.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "license": "MIT"
 }

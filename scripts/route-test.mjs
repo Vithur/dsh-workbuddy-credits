@@ -187,7 +187,6 @@ await test('默认配置齐全（宿主不会再替我们填）', () => {
   assert.equal(defaults.baseUrl, 'http://192.168.1.42:7863')
   assert.equal(defaults.apiKeyRef, 'WORKBUDDY_API_KEY')
   assert.equal(defaults.reasoningProvider, 'workbuddy')
-  assert.equal(defaults.rowLimit, 10)
   assert.deepEqual(defaults.providers, [])
 })
 await test('推理等级同步**默认关闭** —— 不默认改用户配置', () => {
@@ -238,10 +237,10 @@ await test('返回 ok 与 snapshot', () => {
   assert.equal(okPayload.ok, true)
   assert.ok(okPayload.snapshot)
 })
-await test('快照带账户余额', () => {
-  assert.equal(okPayload.snapshot.balances.length, 1)
-  assert.equal(okPayload.snapshot.balances[0].credits, 2983)
-  assert.equal(okPayload.snapshot.balances[0].creditsTotal, 4726)
+await test('快照带账号卡余额', () => {
+  assert.equal(okPayload.snapshot.accountCards.length, 1)
+  assert.equal(okPayload.snapshot.accountCards[0].credits, 2983)
+  assert.equal(okPayload.snapshot.accountCards[0].creditsTotal, 4726)
 })
 await test('快照带模型推理等级', () => {
   const hy4 = okPayload.snapshot.capabilities.find((c) => c.id === 'cn:hy4-preview')
@@ -249,18 +248,15 @@ await test('快照带模型推理等级', () => {
   assert.deepEqual(hy4.efforts, ['high'])
   assert.deepEqual(glm.efforts, ['low', 'high', 'max'])
 })
-await test('积分扣除历史带齐网关面板要的字段', () => {
-  const row = okPayload.snapshot.creditModels.find((r) => r.key === 'glm-5.3-flash')
-  assert.equal(row.rate, '0.06')
+await test('低倍率模型卡的用量按倍率归因', () => {
+  // glm-5.3-flash 生效价 0.06 低于阈值，观测 rate='0.06' 命中 → 用量归到本路由。
+  const row = okPayload.snapshot.models.find((r) => r.id === 'cn:glm-5.3-flash')
+  assert.ok(row, '低倍率模型卡缺失')
+  assert.equal(row.multiplier, 0.06)
   assert.equal(row.requests, 44)
   assert.equal(row.credits, 5.61)
-  assert.equal(row.creditTokens, 1308602)
-  assert.equal(row.creditSamples, 44)
-  assert.equal(row.creditsPer1m, 4.287)
-  assert.equal(row.cacheHitTokens, 1204096)
-  assert.equal(row.cacheMissTokens, 87716)
 })
-await test('积分扣除汇总带齐五张卡的值', () => {
+await test('积分扣除汇总带齐三张卡的值', () => {
   const totals = okPayload.snapshot.creditTotals
   assert.equal(totals.credits, 5.61)
   assert.equal(totals.creditTokens, 1308602)
@@ -268,11 +264,6 @@ await test('积分扣除汇总带齐五张卡的值', () => {
   assert.equal(totals.creditsPer1m, 4.287)
   assert.equal(totals.cacheHitTokens, 1204096)
   assert.equal(totals.cacheMissTokens, 87716)
-})
-await test('积分扣除历史不按 rowLimit 截断', async () => {
-  const response = await capturedHandler(post({}))
-  const payload = await response.json()
-  assert.equal(payload.snapshot.creditModels.length, 2)
 })
 await test('空 body 不报错', async () => {
   const response = await capturedHandler({ json: async () => { throw new Error('no body') } })

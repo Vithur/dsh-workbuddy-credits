@@ -49,18 +49,53 @@
  */
 
 /**
- * 小时序列上的一点 —— 24h 积分趋势图的一根柱。
+ * 小时序列上的一点 —— Token 时序图的一根堆叠柱。
  * @typedef {object} SeriesPoint
- * @property {string} t 小时起始时刻
- * @property {number} requests 请求数
+ * @property {string} t 小时桶起始时刻，如 `2026-10-03T06`
+ * @property {number} requests 该小时请求数
  * @property {number} errors 失败数
- * @property {number} tokens 总 token
+ * @property {number} promptTokens 输入 token（柱的下段）
+ * @property {number} completionTokens 输出 token（柱的上段）
+ * @property {number} totalTokens 总 token（柱高）
  * @property {number} credits 该小时消耗积分
- * @property {number|null} [rate] 该小时 Dominant 模型的倍率，无则 null
  */
 
 /**
- * 已添加模型的倍率比对行 —— 插件的核心产出之一。
+ * 「模型」板块的一行 —— 只收当前生效倍率低于阈值的模型。
+ *
+ * 用量字段（requests / credits / cacheHitTokens / creditsPer1m）按**倍率归因**：
+ * 来自 `credit_by_model` 中观测 rate 与本模型生效价相符的行，见 `lowRateModels`。
+ * @typedef {object} LowRateModel
+ * @property {string} id 模型全 id（带 realm 前缀）
+ * @property {string} name 展示名
+ * @property {number} multiplier 当前生效倍率（数值）
+ * @property {number} listRate 牌价倍率；上游未写时为 `null`
+ * @property {number|null} promoRate 促销倍率；无促销时为 `null`
+ * @property {string|null} promoLabel 促销标签（如「限时免费」）
+ * @property {number} requests 窗口内请求数
+ * @property {number} credits 窗口内扣除积分
+ * @property {number} cacheHitTokens 缓存命中 token
+ * @property {number} cacheMissTokens 缓存未命中 token
+ * @property {number|null} creditsPer1m 本路由的「积分 / 1M Token」；无 token 样本时为 `null`
+ */
+
+/**
+ * 「账号」板块的一行。
+ * @typedef {object} AccountCard
+ * @property {string} uid
+ * @property {string} nickname
+ * @property {string} realm `cn` / `global`
+ * @property {number} credits 剩余积分
+ * @property {number} creditsTotal 总额度
+ * @property {number} creditsExpiring 即将过期积分
+ * @property {boolean} disabled 是否已禁用
+ * @property {boolean} cooling 是否处于冷却
+ * @property {number|null} coolingUntil 冷却截止毫秒；不在冷却为 `null`
+ * @property {Array<{ model: string, kind: string, until: number|null, resetAt: number|null }>} limited 模型级限流行
+ */
+
+/**
+ * 已添加模型的倍率比对行 —— 状态栏 pill 用来定位当前会话模型。
  * @typedef {object} ModelMatch
  * @property {string} id 模型 id
  * @property {number|null} multiplier 当前倍率数值；null 表示未在网关倍率表里找到
@@ -80,10 +115,9 @@
  * @property {string|null} [generated] 网关生成时刻
  * @property {string|null} [since] 统计起点
  * @property {UsageStat|null} [totals] 全局汇总
- * @property {UsageRow[]} models 模型维度
- * @property {UsageRow[]} accounts 账户维度
- * @property {UsageRow[]} creditModels 带倍率的模型维度
- * @property {UsageRow[]} creditAccounts 带积分的账户维度
- * @property {SeriesPoint[]} series 小时序列
- * @property {ModelMatch[]} matches 已添加模型的倍率比对
+ * @property {UsageStat[]} [accounts] 网关账户余额与状态
+ * @property {LowRateModel[]} models 生效倍率低于阈值的模型
+ * @property {AccountCard[]} accountCards 按 realm 排序的账户卡
+ * @property {SeriesPoint[]} series 小时 Token 序列
+ * @property {ModelMatch[]} matches 已添加模型的倍率比对（状态栏 pill 用）
  */

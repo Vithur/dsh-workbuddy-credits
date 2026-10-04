@@ -3,907 +3,917 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
-    var __external = (id) => require(id);
-var __WB_CREDITS__ = (() => {
-  var __create = Object.create;
-  var __defProp = Object.defineProperty;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-  var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __getProtoOf = Object.getPrototypeOf;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
-    if (typeof require !== "undefined") return require.apply(this, arguments);
-    throw Error('Dynamic require of "' + x + '" is not supported');
-  });
-  var __export = (target, all) => {
-    for (var name2 in all)
-      __defProp(target, name2, { get: all[name2], enumerable: true });
-  };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name2 in all)
+    __defProp(target, name2, { get: all[name2], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// client/index.js
+var index_exports = {};
+__export(index_exports, {
+  apply: () => apply,
+  inject: () => inject,
+  name: () => name
+});
+module.exports = __toCommonJS(index_exports);
+var import_react4 = __toESM(require("react"), 1);
+
+// shared/constants.js
+var LOCALE_NS = "workbuddyCredits";
+var API_ROUTE = "/api/workbuddy-credits/usage";
+var DEFAULT_POLL_MS = 3e4;
+var LOW_RATE_THRESHOLD = 0.2;
+
+// client/format.js
+var format_exports = {};
+__export(format_exports, {
+  EMPTY: () => EMPTY,
+  balancePercent: () => balancePercent,
+  cacheColor: () => cacheColor,
+  cacheRate: () => cacheRate,
+  clockAt: () => clockAt,
+  clockOf: () => clockOf,
+  compact: () => compact,
+  countdown: () => countdown,
+  credits: () => credits,
+  dateLabel: () => dateLabel,
+  effortLabel: () => effortLabel,
+  gatewayCredit: () => gatewayCredit,
+  gatewayCreditRatio: () => gatewayCreditRatio,
+  gatewayRate: () => gatewayRate,
+  gatewayTokens: () => gatewayTokens,
+  hourLabel: () => hourLabel,
+  multiplier: () => multiplier,
+  percent: () => percent,
+  rateNumber: () => rateNumber,
+  relativeTime: () => relativeTime,
+  shortTokens: () => shortTokens,
+  tokens: () => tokens,
+  trimFixed: () => trimFixed
+});
+var EMPTY = "—";
+function credits(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  if (value === 0) return "0";
+  if (Math.abs(value) >= 1e3) return value.toFixed(2);
+  if (Math.abs(value) >= 1) return value.toFixed(2);
+  return value.toFixed(4);
+}
+function tokens(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  return Math.round(value).toLocaleString("en-US");
+}
+function compact(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  const abs = Math.abs(value);
+  if (abs >= 1e6) return (value / 1e6).toFixed(1) + "M";
+  if (abs >= 1e3) return (value / 1e3).toFixed(1) + "k";
+  return String(Math.round(value));
+}
+function percent(value, digits = 1) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  return `${value.toFixed(digits)}%`;
+}
+function multiplier(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  if (value === 0) return "免费";
+  return `x${value}`;
+}
+function hourLabel(t) {
+  if (typeof t !== "string") return EMPTY;
+  const at = t.indexOf("T");
+  if (at < 0) return t;
+  if (at === t.length - 1) return EMPTY;
+  return t.slice(at + 1) + " 时";
+}
+function clockOf(iso) {
+  if (typeof iso !== "string") return EMPTY;
+  const at = iso.indexOf("T");
+  if (at < 0) return EMPTY;
+  return iso.slice(at + 1, at + 6);
+}
+function relativeTime(iso, now = Date.now()) {
+  if (typeof iso !== "string") return EMPTY;
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) return EMPTY;
+  const seconds = Math.round((now - at) / 1e3);
+  if (seconds < 0) return "刚刚";
+  if (seconds < 60) return "刚刚";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} 分钟前`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} 小时前`;
+  return `${Math.floor(seconds / 86400)} 天前`;
+}
+function effortLabel(value) {
+  const labels = { low: "低", medium: "中", high: "高", xhigh: "极高", max: "最大" };
+  return labels[value] ?? value;
+}
+function dateLabel(value) {
+  if (typeof value !== "string" || !value || value.startsWith("0001-")) return EMPTY;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return value;
+  return new Date(parsed).toLocaleString("zh-CN", { hour12: false });
+}
+function balancePercent(balance) {
+  if (!Number.isFinite(balance?.creditsTotal) || balance.creditsTotal <= 0) return 0;
+  return Math.max(0, Math.min(100, balance.credits / balance.creditsTotal * 100));
+}
+function rateNumber(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
+  return value.toFixed(2);
+}
+function shortTokens(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return EMPTY;
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (abs >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (abs >= 1e3) return (n / 1e3).toFixed(1) + "k";
+  return String(Math.round(n));
+}
+function countdown(ms, now = Date.now()) {
+  if (typeof ms !== "number" || !Number.isFinite(ms)) return EMPTY;
+  const remain = Math.round((ms - now) / 1e3);
+  if (remain <= 0) return EMPTY;
+  if (remain < 60) return `${remain} 秒`;
+  if (remain < 3600) return `${Math.floor(remain / 60)} 分`;
+  if (remain < 86400) return `${Math.floor(remain / 3600)} 小时`;
+  return `${Math.floor(remain / 86400)} 天`;
+}
+function clockAt(ms) {
+  if (typeof ms !== "number" || !Number.isFinite(ms)) return EMPTY;
+  const date = new Date(ms);
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const md = `${date.getMonth() + 1}-${String(date.getDate()).padStart(2, "0")}`;
+  const today = /* @__PURE__ */ new Date();
+  const todayMd = `${today.getMonth() + 1}-${String(today.getDate()).padStart(2, "0")}`;
+  return md === todayMd ? `${hh}:${mm}` : `${md} ${hh}:${mm}`;
+}
+function trimFixed(value) {
+  const text = String(value);
+  if (!text.includes(".")) return text;
+  return text.replace(/0+$/, "").replace(/\.$/, "");
+}
+function gatewayTokens(value) {
+  const n = Number(value || 0);
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
+  return String(n);
+}
+function gatewayCredit(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return EMPTY;
+  return trimFixed(n.toFixed(2));
+}
+function gatewayRate(rate) {
+  const text = String(rate ?? "").trim();
+  return text ? "x" + text : EMPTY;
+}
+function gatewayCreditRatio(value, samples, tokens2) {
+  if (!samples || !tokens2) return EMPTY;
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return EMPTY;
+  return trimFixed(n.toFixed(4)) + " / 1M";
+}
+function cacheRate(hit, miss) {
+  const h = Number(hit || 0);
+  const m = Number(miss || 0);
+  const total = h + m;
+  if (!total) return EMPTY;
+  return String(Math.round(h / total * 1e3) / 10) + "%";
+}
+function cacheColor(hit, miss) {
+  const h = Number(hit || 0);
+  const m = Number(miss || 0);
+  const total = h + m;
+  if (!total) return "var(--dsw-alias-label-tertiary, rgba(128,128,128,.8))";
+  const pct = h / total * 100;
+  if (pct >= 90) return "var(--success, #30a46c)";
+  if (pct >= 80) return "var(--warning, #f2b94b)";
+  return "var(--danger, #e5484d)";
+}
+
+// client/locale.js
+var DICT_ZH = {
+  // 状态栏 pill
+  pillPeriodHint: "本期整体消耗",
+  // 通用状态
+  loading: "读取中",
+  unreachable: "网关不可达",
+  retry: "重试",
+  noData: "暂无数据",
+  // 设置页菜单项
+  balancePage: "积分余额",
+  // 概览三栏
+  creditsGroup: "积分",
+  refresh: "刷新",
+  refreshing: "同步中",
+  refreshHint: "重新读取网关的全部数据",
+  balanceRatio: "剩余 / 总额",
+  avgPer1m: "积分 / 1M Token",
+  cacheHit: "缓存命中率",
+  // 模型板块
+  model: "模型",
+  multiplier: "倍率",
+  requests: "请求",
+  creditsDeducted: "扣除积分",
+  noCredits: "本期无扣除",
+  per1mCredits: "积分 / 1M Token",
+  capTool: "工具",
+  capVision: "视觉",
+  capThinking: "思考常开",
+  underRate: "生效倍率 ≤",
+  countUnit: "个",
+  noLowRateModel: "当前没有生效倍率低于阈值的模型",
+  // 账号板块
+  accounts: "账号",
+  creditsUnit: "积分",
+  realmCn: "国内",
+  realmGlobal: "国际",
+  available: "可用",
+  rateLimited: "限流",
+  unlockAt: "解封",
+  noAccounts: "网关还没有账号"
+};
+var DICT_EN = {
+  pillPeriodHint: "Whole period",
+  loading: "Loading",
+  unreachable: "Gateway unreachable",
+  retry: "Retry",
+  noData: "No data",
+  balancePage: "Credit balance",
+  creditsGroup: "Credits",
+  refresh: "Refresh",
+  refreshing: "Syncing",
+  refreshHint: "Re-read every value from the gateway",
+  balanceRatio: "Remaining / total",
+  avgPer1m: "Credits / 1M tokens",
+  cacheHit: "Cache hit",
+  model: "Models",
+  multiplier: "Rate",
+  requests: "Requests",
+  creditsDeducted: "Deducted",
+  noCredits: "Nothing deducted",
+  per1mCredits: "Credits / 1M tokens",
+  capTool: "Tools",
+  capVision: "Vision",
+  capThinking: "Thinking always on",
+  underRate: "Effective rate ≤",
+  countUnit: "total",
+  noLowRateModel: "No model is currently under the effective-rate threshold",
+  accounts: "Accounts",
+  creditsUnit: "credits",
+  realmCn: "China",
+  realmGlobal: "Global",
+  available: "Available",
+  rateLimited: "rate limited",
+  unlockAt: "Unlocks",
+  noAccounts: "The gateway has no accounts yet"
+};
+
+// client/useSnapshot.js
+var import_react = require("react");
+async function fetchSnapshot(signal) {
+  try {
+    const response = await fetch(API_ROUTE, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+      signal
+    });
+    if (!response.ok) {
+      return { ok: false, error: `接口返回 HTTP ${response.status}` };
     }
-    return to;
-  };
-  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-    mod
-  ));
-  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-  // client/index.js
-  var index_exports = {};
-  __export(index_exports, {
-    apply: () => apply,
-    inject: () => inject,
-    name: () => name
-  });
-  var import_react4 = __toESM(__require("react"), 1);
-
-  // shared/constants.js
-  var LOCALE_NS = "workbuddyCredits";
-  var API_ROUTE = "/api/workbuddy-credits/usage";
-  var DEFAULT_POLL_MS = 3e4;
-
-  // client/format.js
-  var format_exports = {};
-  __export(format_exports, {
-    EMPTY: () => EMPTY,
-    balancePercent: () => balancePercent,
-    cacheColor: () => cacheColor,
-    cacheRate: () => cacheRate,
-    clockOf: () => clockOf,
-    compact: () => compact,
-    credits: () => credits,
-    dateLabel: () => dateLabel,
-    effortLabel: () => effortLabel,
-    gatewayCredit: () => gatewayCredit,
-    gatewayCreditRatio: () => gatewayCreditRatio,
-    gatewayRate: () => gatewayRate,
-    gatewayTokens: () => gatewayTokens,
-    hourLabel: () => hourLabel,
-    multiplier: () => multiplier,
-    percent: () => percent,
-    relativeTime: () => relativeTime,
-    tokens: () => tokens,
-    trimFixed: () => trimFixed
-  });
-  var EMPTY = "\u2014";
-  function credits(value) {
-    if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
-    if (value === 0) return "0";
-    if (Math.abs(value) >= 1e3) return value.toFixed(2);
-    if (Math.abs(value) >= 1) return value.toFixed(2);
-    return value.toFixed(4);
+    const payload = await response.json();
+    if (payload?.ok === false) return { ok: false, error: payload.error ?? "未知错误" };
+    return { ok: true, snapshot: payload?.snapshot ?? null };
+  } catch (error) {
+    if (error?.name === "AbortError") return { ok: false, error: null, aborted: true };
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
-  function tokens(value) {
-    if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
-    return Math.round(value).toLocaleString("en-US");
-  }
-  function compact(value) {
-    if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
-    const abs = Math.abs(value);
-    if (abs >= 1e6) return (value / 1e6).toFixed(1) + "M";
-    if (abs >= 1e3) return (value / 1e3).toFixed(1) + "k";
-    return String(Math.round(value));
-  }
-  function percent(value, digits = 1) {
-    if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
-    return `${value.toFixed(digits)}%`;
-  }
-  function multiplier(value) {
-    if (typeof value !== "number" || !Number.isFinite(value)) return EMPTY;
-    if (value === 0) return "\u514D\u8D39";
-    return `x${value}`;
-  }
-  function hourLabel(t) {
-    if (typeof t !== "string") return EMPTY;
-    const at = t.indexOf("T");
-    if (at < 0) return t;
-    if (at === t.length - 1) return EMPTY;
-    return t.slice(at + 1) + " \u65F6";
-  }
-  function clockOf(iso) {
-    if (typeof iso !== "string") return EMPTY;
-    const at = iso.indexOf("T");
-    if (at < 0) return EMPTY;
-    return iso.slice(at + 1, at + 6);
-  }
-  function relativeTime(iso, now = Date.now()) {
-    if (typeof iso !== "string") return EMPTY;
-    const at = Date.parse(iso);
-    if (!Number.isFinite(at)) return EMPTY;
-    const seconds = Math.round((now - at) / 1e3);
-    if (seconds < 0) return "\u521A\u521A";
-    if (seconds < 60) return "\u521A\u521A";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} \u5206\u949F\u524D`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} \u5C0F\u65F6\u524D`;
-    return `${Math.floor(seconds / 86400)} \u5929\u524D`;
-  }
-  function effortLabel(value) {
-    const labels = { low: "\u4F4E", medium: "\u4E2D", high: "\u9AD8", xhigh: "\u6781\u9AD8", max: "\u6700\u5927" };
-    return labels[value] ?? value;
-  }
-  function dateLabel(value) {
-    if (typeof value !== "string" || !value || value.startsWith("0001-")) return EMPTY;
-    const parsed = Date.parse(value);
-    if (!Number.isFinite(parsed)) return value;
-    return new Date(parsed).toLocaleString("zh-CN", { hour12: false });
-  }
-  function balancePercent(balance) {
-    if (!Number.isFinite(balance?.creditsTotal) || balance.creditsTotal <= 0) return 0;
-    return Math.max(0, Math.min(100, balance.credits / balance.creditsTotal * 100));
-  }
-  function trimFixed(value) {
-    const text = String(value);
-    if (!text.includes(".")) return text;
-    return text.replace(/0+$/, "").replace(/\.$/, "");
-  }
-  function gatewayTokens(value) {
-    const n = Number(value || 0);
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
-    return String(n);
-  }
-  function gatewayCredit(value) {
-    const n = Number(value || 0);
-    if (!Number.isFinite(n)) return EMPTY;
-    return trimFixed(n.toFixed(2));
-  }
-  function gatewayRate(rate) {
-    const text = String(rate ?? "").trim();
-    return text ? "x" + text : EMPTY;
-  }
-  function gatewayCreditRatio(value, samples, tokens2) {
-    if (!samples || !tokens2) return EMPTY;
-    const n = Number(value || 0);
-    if (!Number.isFinite(n)) return EMPTY;
-    return trimFixed(n.toFixed(4)) + " / 1M";
-  }
-  function cacheRate(hit, miss) {
-    const h = Number(hit || 0);
-    const m = Number(miss || 0);
-    const total = h + m;
-    if (!total) return EMPTY;
-    return String(Math.round(h / total * 1e3) / 10) + "%";
-  }
-  function cacheColor(hit, miss) {
-    const h = Number(hit || 0);
-    const m = Number(miss || 0);
-    const total = h + m;
-    if (!total) return "var(--dsw-alias-label-tertiary, rgba(128,128,128,.8))";
-    const pct = h / total * 100;
-    if (pct >= 90) return "var(--success, #30a46c)";
-    if (pct >= 80) return "var(--warning, #f2b94b)";
-    return "var(--danger, #e5484d)";
-  }
-
-  // client/locale.js
-  var DICT_ZH = {
-    // 状态栏 pill
-    pillPeriodHint: "\u672C\u671F\u6574\u4F53\u6D88\u8017",
-    // 通用状态
-    loading: "\u8BFB\u53D6\u4E2D",
-    unreachable: "\u7F51\u5173\u4E0D\u53EF\u8FBE",
-    retry: "\u91CD\u8BD5",
-    updatedAt: "\u66F4\u65B0\u4E8E",
-    // 页头
-    balancePage: "\u79EF\u5206\u4F59\u989D",
-    balanceHint: "\u8D26\u6237\u603B\u89C8\u3001\u7528\u91CF\u660E\u7EC6\u4E0E\u79EF\u5206\u6263\u9664\u5386\u53F2",
-    // 一行总览
-    totalBalance: "\u8D26\u6237\u5408\u8BA1",
-    ofCapacity: "\u603B\u989D",
-    expiring: "\u5373\u5C06\u8FC7\u671F",
-    totalCredits: "\u672C\u671F\u79EF\u5206",
-    requests: "\u8BF7\u6C42\u6570",
-    failed: "\u5931\u8D25",
-    allOk: "\u5168\u90E8\u6210\u529F",
-    totalTokens: "\u603B token",
-    cacheHit: "\u7F13\u5B58\u547D\u4E2D\u7387",
-    since: "\u7EDF\u8BA1\u8D77\u70B9",
-    // 模型倍率
-    modelRates: "\u6A21\u578B\u500D\u7387",
-    modelRatesHint: "\u5DF2\u6DFB\u52A0\u6A21\u578B\u4E0E\u7F51\u5173\u5F53\u524D\u500D\u7387\u7684\u5BF9\u5E94\u5173\u7CFB\uFF0C\u6309\u500D\u7387\u964D\u5E8F",
-    model: "\u6A21\u578B",
-    multiplier: "\u500D\u7387",
-    creditsCol: "\u79EF\u5206",
-    tokensCol: "token",
-    unused: "\u672C\u671F\u65E0\u7528\u91CF",
-    unknownRate: "\u672A\u77E5",
-    // 小时趋势
-    hourlyTrend: "\u5C0F\u65F6\u8D8B\u52BF",
-    hourlyTrendHint: "\u6BCF\u4E2A\u5C0F\u65F6\u7684\u79EF\u5206\u6D88\u8017",
-    // 积分扣除历史
-    creditHistory: "\u79EF\u5206\u6263\u9664\u5386\u53F2",
-    byAccount: "\u6309\u8D26\u53F7",
-    byModel: "\u6309\u6A21\u578B",
-    account: "\u8D26\u53F7",
-    creditsDeducted: "\u6263\u9664\u79EF\u5206",
-    creditsDeductedHint: "\u6309\u4E0A\u6E38 usage.credit \u7D2F\u8BA1",
-    matchedTokens: "\u5339\u914D Token",
-    matchedTokensHint: "\u4E0E\u79EF\u5206\u540C\u65F6\u89C2\u6D4B\u5230\u7684 Token",
-    avgPer1m: "\u5E73\u5747\u79EF\u5206 / 1M Token",
-    avgPer1mHint: "\u8D8A\u4F4E\u8D8A\u5212\u7B97",
-    creditSamples: "\u6709\u6548\u79EF\u5206\u6837\u672C",
-    creditSamplesHint: "\u7F3A\u5B57\u6BB5\u7684\u5386\u53F2\u4E0D\u53C2\u4E0E\u6298\u7B97",
-    cacheHitHint: "\u4E0A\u6E38\u524D\u7F00\u7F13\u5B58\u547D\u4E2D / (\u547D\u4E2D+\u672A\u547D\u4E2D)\uFF1B\u4F4E\u547D\u4E2D\u610F\u5473\u7740\u8D39\u7528\u6570\u500D\u653E\u5927",
-    sampleTokens: "\u6709\u6548\u6837\u672C Token",
-    per1m: "\u79EF\u5206 / 1M Token",
-    creditEmpty: "\u6682\u65E0\u79EF\u5206\u6263\u9664\u8BB0\u5F55\uFF1B\u5347\u7EA7\u524D\u4EC5\u542B Token \u7684\u5386\u53F2\u4E0D\u4F1A\u4F2A\u9020\u79EF\u5206\u3002",
-    unitAccounts: "\u4E2A\u8D26\u53F7",
-    unitModelGroups: "\u4E2A\u6A21\u578B\u500D\u7387\u5206\u7EC4",
-    creditOnlyObserved: "\u4EC5\u7EDF\u8BA1\u4E0E\u79EF\u5206\u540C\u65F6\u89C2\u6D4B\u5230\u7684 Token",
-    // 明细表与说明
-    noData: "\u6682\u65E0\u6570\u636E",
-    scopeNote: "\u7F51\u5173\u6309\u5C0F\u65F6\u805A\u5408\uFF0C\u4E0D\u533A\u5206\u4F1A\u8BDD\uFF1A\u6B64\u5904\u4E3A\u672C\u671F\u6574\u4F53\u6D88\u8017\uFF0C\u975E\u5355\u4E2A\u4F1A\u8BDD\u7684\u91CF\u3002"
-  };
-  var DICT_EN = {
-    pillPeriodHint: "Whole period",
-    loading: "Loading",
-    unreachable: "Gateway unreachable",
-    retry: "Retry",
-    updatedAt: "Updated",
-    balancePage: "Credit balance",
-    balanceHint: "Account overview, usage detail, and credit deduction history",
-    totalBalance: "All accounts",
-    ofCapacity: "of",
-    expiring: "expiring",
-    totalCredits: "Credits spent",
-    requests: "Requests",
-    failed: "failed",
-    allOk: "all succeeded",
-    totalTokens: "Total tokens",
-    cacheHit: "Cache hit",
-    since: "Since",
-    modelRates: "Model rates",
-    modelRatesHint: "Configured models matched against the gateway current multiplier, priciest first",
-    model: "Model",
-    multiplier: "Rate",
-    creditsCol: "Credits",
-    tokensCol: "Tokens",
-    unused: "No usage this period",
-    unknownRate: "Unknown",
-    hourlyTrend: "Hourly trend",
-    hourlyTrendHint: "Credits consumed each hour",
-    creditHistory: "Credit deduction history",
-    byAccount: "By account",
-    byModel: "By model",
-    account: "Account",
-    creditsDeducted: "Credits deducted",
-    creditsDeductedHint: "Summed from upstream usage.credit",
-    matchedTokens: "Matched tokens",
-    matchedTokensHint: "Tokens observed alongside a credit figure",
-    avgPer1m: "Avg credits / 1M tokens",
-    avgPer1mHint: "Lower is cheaper",
-    creditSamples: "Valid credit samples",
-    creditSamplesHint: "History missing the field is excluded",
-    cacheHitHint: "Upstream prefix-cache hit / (hit + miss); a low rate multiplies cost",
-    sampleTokens: "Sample tokens",
-    per1m: "Credits / 1M tokens",
-    creditEmpty: "No credit deductions recorded yet; token-only history never fabricates credits.",
-    unitAccounts: "accounts",
-    unitModelGroups: "model rate groups",
-    creditOnlyObserved: "counts only tokens observed alongside credits",
-    noData: "No data",
-    scopeNote: "The gateway aggregates hourly and has no session dimension: this is the whole period, not one session."
-  };
-
-  // client/useSnapshot.js
-  var import_react = __require("react");
-  async function fetchSnapshot(signal) {
-    try {
-      const response = await fetch(API_ROUTE, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: "{}",
-        signal
-      });
-      if (!response.ok) {
-        return { ok: false, error: `\u63A5\u53E3\u8FD4\u56DE HTTP ${response.status}` };
+}
+function useSnapshot({ pollMs, enabled = true }) {
+  const [snapshot, setSnapshot] = (0, import_react.useState)(null);
+  const [error, setError] = (0, import_react.useState)(null);
+  const [loading, setLoading] = (0, import_react.useState)(true);
+  const [at, setAt] = (0, import_react.useState)(null);
+  const token = (0, import_react.useRef)(0);
+  const [nonce, setNonce] = (0, import_react.useState)(0);
+  (0, import_react.useEffect)(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    const mine = ++token.current;
+    let timer;
+    const run = async (signal) => {
+      setLoading(true);
+      const result = await fetchSnapshot(signal);
+      if (token.current !== mine) return;
+      if (result.aborted) return;
+      if (result.ok) {
+        setSnapshot(result.snapshot);
+        setError(null);
+        setAt(Date.now());
+      } else {
+        setError(result.error ?? "读取失败");
       }
-      const payload = await response.json();
-      if (payload?.ok === false) return { ok: false, error: payload.error ?? "\u672A\u77E5\u9519\u8BEF" };
-      return { ok: true, snapshot: payload?.snapshot ?? null };
-    } catch (error) {
-      if (error?.name === "AbortError") return { ok: false, error: null, aborted: true };
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
-    }
-  }
-  function useSnapshot({ pollMs, enabled = true }) {
-    const [snapshot, setSnapshot] = (0, import_react.useState)(null);
-    const [error, setError] = (0, import_react.useState)(null);
-    const [loading, setLoading] = (0, import_react.useState)(true);
-    const [at, setAt] = (0, import_react.useState)(null);
-    const token = (0, import_react.useRef)(0);
-    const [nonce, setNonce] = (0, import_react.useState)(0);
-    (0, import_react.useEffect)(() => {
-      if (!enabled) {
-        setLoading(false);
-        return;
-      }
-      const mine = ++token.current;
-      let timer;
-      const run = async (signal) => {
-        setLoading(true);
-        const result = await fetchSnapshot(signal);
-        if (token.current !== mine) return;
-        if (result.aborted) return;
-        if (result.ok) {
-          setSnapshot(result.snapshot);
-          setError(null);
-          setAt(Date.now());
-        } else {
-          setError(result.error ?? "\u8BFB\u53D6\u5931\u8D25");
-        }
-        setLoading(false);
-      };
-      const controller = new AbortController();
-      run(controller.signal);
-      const interval = Number.isFinite(pollMs) && pollMs > 0 ? Math.max(1e3, pollMs) : null;
-      if (interval !== null) {
-        timer = setInterval(() => {
-          const next = new AbortController();
-          run(next.signal);
-        }, interval);
-      }
-      return () => {
-        token.current++;
-        controller.abort();
-        if (timer) clearInterval(timer);
-      };
-    }, [pollMs, enabled, nonce]);
-    const refresh = () => setNonce((n) => n + 1);
-    return { snapshot, error, loading, refresh, at };
-  }
-
-  // client/CreditsDashboard.jsx
-  var import_react2 = __toESM(__require("react"), 1);
-  var page = {
-    fontFamily: "inherit",
-    fontSize: "13px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "18px",
-    padding: "20px",
-    color: "var(--text-primary, currentColor)"
-  };
-  var card = {
-    padding: "10px 12px",
-    borderRadius: "10px",
-    border: "1px solid var(--border, rgba(128,128,128,.22))",
-    background: "var(--surface, rgba(128,128,128,.05))",
-    minWidth: 0
-  };
-  var cardLabel = { fontSize: "11px", opacity: 0.65, marginBottom: "4px" };
-  var cardValue = { fontSize: "18px", fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.2 };
-  var cardSub = { fontSize: "11px", opacity: 0.55, marginTop: "2px" };
-  var section = { display: "flex", flexDirection: "column", gap: "8px" };
-  var sectionTitle = { fontSize: "12px", fontWeight: 600, opacity: 0.85 };
-  var hint = { fontSize: "12px", opacity: 0.6 };
-  var table = { width: "100%", borderCollapse: "collapse", fontSize: "12px" };
-  var th = {
-    textAlign: "left",
-    fontWeight: 500,
-    opacity: 0.55,
-    padding: "4px 8px",
-    borderBottom: "1px solid var(--border, rgba(128,128,128,.18))",
-    whiteSpace: "nowrap"
-  };
-  var thNum = { ...th, textAlign: "right" };
-  var td = {
-    padding: "6px 8px",
-    borderBottom: "1px solid var(--border, rgba(128,128,128,.10))",
-    fontVariantNumeric: "tabular-nums",
-    whiteSpace: "nowrap"
-  };
-  var tdNum = { ...td, textAlign: "right" };
-  var tdName = { ...td, whiteSpace: "normal", wordBreak: "break-all", maxWidth: "240px" };
-  var overviewRow = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-    gap: "10px"
-  };
-  var creditKpiRow = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: "10px"
-  };
-  var barTrack = { height: "6px", borderRadius: "99px", background: "rgba(128,128,128,.22)", overflow: "hidden" };
-  function CreditMark({ size = 22 }) {
-    return import_react2.default.createElement(
-      "svg",
-      { width: size, height: size, viewBox: "0 0 24 24", fill: "none", "aria-hidden": true },
-      import_react2.default.createElement("path", { d: "M12 1.7l1.7 6.6L20.3 10l-6.6 1.7L12 18.3l-1.7-6.6L3.7 10l6.6-1.7L12 1.7z", fill: "currentColor" })
-    );
-  }
-  function Bar({ value, max, label, title }) {
-    const ratio = max > 0 ? Math.max(0.02, value / max) : 0;
-    return import_react2.default.createElement(
-      "div",
-      { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flex: 1, minWidth: 0 }, title },
-      import_react2.default.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "flex-end", height: "56px", width: "100%" } },
-        import_react2.default.createElement("div", {
-          style: {
-            width: "100%",
-            height: `${ratio * 100}%`,
-            borderRadius: "3px 3px 0 0",
-            background: "var(--accent, #4c8dff)",
-            opacity: value > 0 ? 0.9 : 0.25
-          }
-        })
-      ),
-      import_react2.default.createElement("span", { style: { fontSize: "10px", opacity: 0.6 } }, label)
-    );
-  }
-  function Kpi({ label, value, sub, accent }) {
-    return import_react2.default.createElement(
-      "div",
-      { style: { ...card, ...accent ? { borderLeft: `3px solid ${accent}` } : {} } },
-      import_react2.default.createElement("div", { style: cardLabel }, label),
-      import_react2.default.createElement("div", { style: cardValue }, value),
-      sub ? import_react2.default.createElement("div", { style: cardSub }, sub) : null
-    );
-  }
-  function ModelRateTable({ matches, t, fmt }) {
-    if (!matches?.length) return null;
-    return import_react2.default.createElement(
-      "div",
-      { style: section },
-      import_react2.default.createElement("div", { style: sectionTitle }, t("modelRates")),
-      import_react2.default.createElement("div", { style: hint }, t("modelRatesHint")),
-      import_react2.default.createElement(
-        "table",
-        { style: table },
-        import_react2.default.createElement(
-          "thead",
-          null,
-          import_react2.default.createElement(
-            "tr",
-            null,
-            import_react2.default.createElement("th", { style: th }, t("model")),
-            import_react2.default.createElement("th", { style: th }, t("multiplier")),
-            import_react2.default.createElement("th", { style: thNum }, t("requests")),
-            import_react2.default.createElement("th", { style: thNum }, t("creditsCol")),
-            import_react2.default.createElement("th", { style: thNum }, t("tokensCol"))
-          )
-        ),
-        import_react2.default.createElement(
-          "tbody",
-          null,
-          matches.map(
-            (m) => import_react2.default.createElement(
-              "tr",
-              { key: m.id },
-              import_react2.default.createElement("td", { style: tdName }, m.id),
-              import_react2.default.createElement(
-                "td",
-                { style: { ...td, color: m.multiplier === 0 ? "var(--success, #30a46c)" : void 0 } },
-                m.known ? fmt.multiplier(m.multiplier) : t("unknownRate")
-              ),
-              import_react2.default.createElement("td", { style: tdNum }, m.requests > 0 ? fmt.tokens(m.requests) : "\u2014"),
-              import_react2.default.createElement("td", { style: tdNum }, m.requests > 0 ? fmt.gatewayCredit(m.credits) : t("unused")),
-              import_react2.default.createElement("td", { style: tdNum }, m.requests > 0 ? fmt.compact(m.tokens) : "\u2014")
-            )
-          )
-        )
-      )
-    );
-  }
-  function HourlyTrend({ series, t, fmt }) {
-    if (!series?.length) return null;
-    const max = Math.max(...series.map((point) => point.credits), 1e-4);
-    return import_react2.default.createElement(
-      "div",
-      { style: section },
-      import_react2.default.createElement("div", { style: sectionTitle }, t("hourlyTrend")),
-      import_react2.default.createElement("div", { style: hint }, t("hourlyTrendHint")),
-      import_react2.default.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "flex-end", gap: "4px" } },
-        series.map(
-          (point) => import_react2.default.createElement(Bar, {
-            key: point.t,
-            value: point.credits,
-            max,
-            label: fmt.hourLabel(point.t),
-            title: `${fmt.hourLabel(point.t)} \xB7 ${fmt.gatewayCredit(point.credits)} \xB7 ${fmt.tokens(point.requests)} \u6B21\u8BF7\u6C42`
-          })
-        )
-      )
-    );
-  }
-  function CacheCell({ row, fmt }) {
-    const text = fmt.cacheRate(row.cacheHitTokens, row.cacheMissTokens);
-    if (text === fmt.EMPTY) return import_react2.default.createElement("span", { style: { opacity: 0.5 } }, text);
-    return import_react2.default.createElement(
-      "span",
-      {
-        style: { color: fmt.cacheColor(row.cacheHitTokens, row.cacheMissTokens) },
-        title: `\u547D\u4E2D ${fmt.gatewayTokens(row.cacheHitTokens)} / \u672A\u547D\u4E2D ${fmt.gatewayTokens(row.cacheMissTokens)} tok`
-      },
-      text
-    );
-  }
-  function CreditHistory({ snapshot, t, fmt }) {
-    const [dimension, setDimension] = import_react2.default.useState("model");
-    const totals = snapshot?.creditTotals;
-    const models = snapshot?.creditModels ?? [];
-    const accounts = snapshot?.creditAccounts ?? [];
-    const rows = dimension === "model" ? models : accounts;
-    const tabs = [
-      { id: "account", label: t("byAccount"), count: accounts.length },
-      { id: "model", label: t("byModel"), count: models.length }
-    ];
-    const tabBar = import_react2.default.createElement(
-      "div",
-      { style: { display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" } },
-      import_react2.default.createElement("span", { style: { ...sectionTitle, marginRight: "2px" } }, t("creditHistory")),
-      tabs.map(
-        (tab) => import_react2.default.createElement(
-          "button",
-          {
-            key: tab.id,
-            type: "button",
-            onClick: () => setDimension(tab.id),
-            style: {
-              border: "1px solid var(--border, rgba(128,128,128,.25))",
-              borderRadius: "6px",
-              padding: "3px 9px",
-              fontSize: "11.5px",
-              cursor: "pointer",
-              background: dimension === tab.id ? "var(--accent, #4c8dff)" : "transparent",
-              color: dimension === tab.id ? "#fff" : "inherit"
-            }
-          },
-          `${tab.label} ${tab.count}`
-        )
-      ),
-      import_react2.default.createElement(
-        "span",
-        { style: { ...hint, marginLeft: "auto" } },
-        `${accounts.length} ${t("unitAccounts")} \xB7 ${models.length} ${t("unitModelGroups")} \xB7 ${t("creditOnlyObserved")}`
-      )
-    );
-    const kpis = totals ? import_react2.default.createElement(
-      "div",
-      { style: creditKpiRow },
-      import_react2.default.createElement(Kpi, {
-        label: t("creditsDeducted"),
-        value: fmt.gatewayCredit(totals.credits),
-        sub: t("creditsDeductedHint"),
-        accent: "var(--accent, #4c8dff)"
-      }),
-      import_react2.default.createElement(Kpi, {
-        label: t("matchedTokens"),
-        value: fmt.gatewayTokens(totals.creditTokens),
-        sub: t("matchedTokensHint")
-      }),
-      import_react2.default.createElement(Kpi, {
-        label: t("avgPer1m"),
-        value: fmt.gatewayCreditRatio(totals.creditsPer1m, totals.creditSamples, totals.creditTokens),
-        sub: t("avgPer1mHint"),
-        accent: "var(--success, #30a46c)"
-      }),
-      import_react2.default.createElement(Kpi, {
-        label: t("creditSamples"),
-        value: String(totals.creditSamples || 0),
-        sub: t("creditSamplesHint")
-      }),
-      import_react2.default.createElement(Kpi, {
-        label: t("cacheHit"),
-        value: fmt.cacheRate(totals.cacheHitTokens, totals.cacheMissTokens),
-        sub: t("cacheHitHint")
-      })
-    ) : null;
-    const head = import_react2.default.createElement(
-      "thead",
-      null,
-      import_react2.default.createElement(
-        "tr",
-        null,
-        import_react2.default.createElement("th", { style: th }, dimension === "model" ? t("model") : t("account")),
-        dimension === "model" ? import_react2.default.createElement("th", { style: th }, t("multiplier")) : null,
-        import_react2.default.createElement("th", { style: thNum }, t("requests")),
-        import_react2.default.createElement("th", { style: thNum }, t("creditsDeducted")),
-        import_react2.default.createElement("th", { style: thNum }, t("sampleTokens")),
-        import_react2.default.createElement("th", { style: thNum }, t("per1m")),
-        import_react2.default.createElement("th", { style: thNum }, t("cacheHit"))
-      )
-    );
-    const body = import_react2.default.createElement(
-      "tbody",
-      null,
-      rows.length === 0 ? import_react2.default.createElement(
-        "tr",
-        null,
-        import_react2.default.createElement("td", { style: { ...td, opacity: 0.6 }, colSpan: dimension === "model" ? 7 : 6 }, t("creditEmpty"))
-      ) : rows.map(
-        (row) => import_react2.default.createElement(
-          "tr",
-          { key: `${dimension}:${row.key}` },
-          import_react2.default.createElement(
-            "td",
-            { style: tdName },
-            dimension === "model" ? row.key : import_react2.default.createElement(
-              import_react2.default.Fragment,
-              null,
-              row.nickname || row.key.slice(0, 8) || "\u2014",
-              import_react2.default.createElement(
-                "div",
-                { style: { fontSize: "10.5px", opacity: 0.55 } },
-                `${row.realm || ""} \xB7 ${row.key.slice(0, 8)}`
-              )
-            )
-          ),
-          dimension === "model" ? import_react2.default.createElement("td", { style: td }, fmt.gatewayRate(row.rate)) : null,
-          import_react2.default.createElement("td", { style: tdNum }, fmt.gatewayTokens(row.requests)),
-          import_react2.default.createElement("td", { style: tdNum }, fmt.gatewayCredit(row.credits)),
-          import_react2.default.createElement("td", { style: tdNum }, fmt.gatewayTokens(row.creditTokens)),
-          import_react2.default.createElement("td", { style: tdNum }, fmt.gatewayCreditRatio(row.creditsPer1m, row.creditSamples, row.creditTokens)),
-          import_react2.default.createElement("td", { style: tdNum }, import_react2.default.createElement(CacheCell, { row, fmt }))
-        )
-      )
-    );
-    return import_react2.default.createElement(
-      "div",
-      { style: section },
-      tabBar,
-      kpis,
-      import_react2.default.createElement("table", { style: table }, head, body)
-    );
-  }
-  function CreditsDashboard({ t, fmt, useSnapshot: useSnapshot2, pollMs, ...rest }) {
-    const { snapshot, error, loading, refresh, at } = useSnapshot2({ pollMs });
-    const totals = snapshot?.totals;
-    const balances = snapshot?.balances ?? [];
-    const state = import_react2.default.useMemo(() => {
-      if (error) return { kind: "error", text: error };
-      if (!snapshot) return { kind: "loading", text: t("loading") };
-      if (snapshot.ok === false) return { kind: "error", text: snapshot.error ?? t("unreachable") };
-      if (!totals && balances.length === 0) return { kind: "empty", text: t("noData") };
-      return { kind: "ready" };
-    }, [error, snapshot, totals, balances.length, t]);
-    if (state.kind === "loading") {
-      return import_react2.default.createElement("div", { style: { ...page, opacity: 0.7, ...rest } }, state.text);
-    }
-    if (state.kind === "error" || state.kind === "empty") {
-      return import_react2.default.createElement(
-        "div",
-        { style: { ...page, gap: "10px", ...rest } },
-        import_react2.default.createElement("h2", { style: { margin: 0, fontSize: "15px", color: state.kind === "error" ? "var(--danger, #e5484d)" : void 0 } }, t("balancePage")),
-        import_react2.default.createElement("div", { style: { fontSize: "12px", opacity: 0.7 } }, state.text),
-        import_react2.default.createElement(
-          "button",
-          {
-            type: "button",
-            onClick: refresh,
-            style: {
-              alignSelf: "flex-start",
-              padding: "5px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border, rgba(128,128,128,.3))",
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: "12px"
-            }
-          },
-          t("retry")
-        )
-      );
-    }
-    const totalCredits = balances.reduce((sum, item) => sum + item.credits, 0);
-    const totalCapacity = balances.reduce((sum, item) => sum + item.creditsTotal, 0);
-    const totalExpiring = balances.reduce((sum, item) => sum + item.creditsExpiring, 0);
-    const remainingPercent = totalCapacity > 0 ? totalCredits / totalCapacity * 100 : 0;
-    return import_react2.default.createElement(
-      "div",
-      { style: { ...page, ...rest } },
-      import_react2.default.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "center", gap: "10px" } },
-        import_react2.default.createElement(CreditMark, { size: 26 }),
-        import_react2.default.createElement(
-          "div",
-          null,
-          import_react2.default.createElement("h2", { style: { margin: 0, fontSize: "15px" } }, t("balancePage")),
-          import_react2.default.createElement("p", { style: { ...hint, margin: 0 } }, t("balanceHint"))
-        ),
-        at ? import_react2.default.createElement("span", { style: { ...hint, marginLeft: "auto" } }, `${t("updatedAt")} ${fmt.relativeTime(new Date(at).toISOString())}`) : null
-      ),
-      // —— 一行总览：账户合计 + 四张本期 KPI ——
-      import_react2.default.createElement(
-        "div",
-        { style: overviewRow },
-        import_react2.default.createElement(
-          "div",
-          { style: { ...card, display: "flex", flexDirection: "column", justifyContent: "center" } },
-          import_react2.default.createElement(
-            "div",
-            { style: { ...cardLabel, display: "flex", alignItems: "center", gap: "6px" } },
-            import_react2.default.createElement(CreditMark, { size: 15 }),
-            t("totalBalance")
-          ),
-          import_react2.default.createElement("div", { style: cardValue }, fmt.credits(totalCredits)),
-          import_react2.default.createElement("div", { style: barTrack }, import_react2.default.createElement("div", {
-            style: {
-              width: `${remainingPercent}%`,
-              height: "100%",
-              background: remainingPercent < 20 ? "var(--danger, #e5484d)" : "var(--accent, #4c8dff)"
-            }
-          })),
-          import_react2.default.createElement("div", { style: cardSub }, `${t("ofCapacity")} ${fmt.credits(totalCapacity)} \xB7 ${t("expiring")} ${fmt.credits(totalExpiring)}`)
-        ),
-        import_react2.default.createElement(Kpi, {
-          label: t("totalCredits"),
-          value: fmt.gatewayCredit(totals?.credits),
-          sub: `${t("since")} ${fmt.hourLabel(snapshot.since) || "\u2014"}`
-        }),
-        import_react2.default.createElement(Kpi, {
-          label: t("requests"),
-          value: fmt.tokens(totals?.requests ?? 0),
-          sub: totals?.errors > 0 ? `${t("failed")} ${fmt.tokens(totals.errors)}` : t("allOk")
-        }),
-        import_react2.default.createElement(Kpi, { label: t("totalTokens"), value: fmt.compact(totals?.total_tokens ?? 0) }),
-        import_react2.default.createElement(Kpi, { label: t("cacheHit"), value: fmt.percent(totals?.cache_hit_rate ?? 0, 1) })
-      ),
-      import_react2.default.createElement(HourlyTrend, { series: snapshot.series, t, fmt }),
-      import_react2.default.createElement(ModelRateTable, { matches: snapshot.matches, t, fmt }),
-      import_react2.default.createElement(CreditHistory, { snapshot, t, fmt }),
-      import_react2.default.createElement("div", { style: { ...hint, borderTop: "1px solid var(--border, rgba(128,128,128,.14))", paddingTop: "8px", lineHeight: 1.6 } }, t("scopeNote"))
-    );
-  }
-
-  // client/CreditsPill.jsx
-  var import_react3 = __toESM(__require("react"), 1);
-  var root = {
-    boxSizing: "border-box",
-    minWidth: 0,
-    maxWidth: "100%",
-    fontSize: "calc(var(--dsh-content-font-size-secondary, 13px) - 1px)",
-    lineHeight: "calc(20px + var(--dsh-content-font-delta-secondary, 0px))",
-    justifyContent: "center",
-    gap: "12px",
-    display: "flex"
-  };
-  var pill = {
-    boxSizing: "border-box",
-    maxWidth: "100%",
-    color: "var(--dsw-alias-label-tertiary)",
-    font: "inherit",
-    fontVariantNumeric: "tabular-nums",
-    lineHeight: "inherit",
-    whiteSpace: "nowrap",
-    background: "0 0",
-    border: "none",
-    borderRadius: "999px",
-    alignItems: "center",
-    gap: "6px",
-    padding: "1px 8px",
-    display: "inline-flex"
-  };
-  var icon = { flex: "none", width: 14, height: 14 };
-  function CreditStar() {
-    return import_react3.default.createElement(
-      "svg",
-      {
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: 1.6,
-        strokeLinejoin: "round",
-        strokeLinecap: "round",
-        "aria-hidden": true,
-        style: icon
-      },
-      import_react3.default.createElement("path", {
-        d: "M12 3.2l1.55 5.05a2 2 0 0 0 1.28 1.28L19.88 11l-5.05 1.55a2 2 0 0 0-1.28 1.28L12 18.88l-1.55-5.05a2 2 0 0 0-1.28-1.28L4.12 11l5.05-1.47a2 2 0 0 0 1.28-1.28L12 3.2z"
-      })
-    );
-  }
-  function resolveCredits(snapshot, modelSelection) {
-    const model = modelSelection?.next?.model ?? modelSelection?.lastUsed?.model ?? null;
-    if (model) {
-      const match = (snapshot?.matches ?? []).find((row) => row.id === model);
-      if (match) return { value: match.credits, scope: "model", model };
-    }
-    const total = snapshot?.totals?.credits;
-    return {
-      value: typeof total === "number" && Number.isFinite(total) ? total : null,
-      scope: "period",
-      model
+      setLoading(false);
     };
-  }
-  function CreditsPill({ t, fmt, useSnapshot: useSnapshot2, pollMs, useProjection }) {
-    const { snapshot, error } = useSnapshot2({ pollMs });
-    const modelSelection = typeof useProjection === "function" ? useProjection("modelSelection") : void 0;
-    const { value, scope, model } = resolveCredits(snapshot, modelSelection);
-    if (value === null) return null;
-    const title = scope === "model" && model ? `${model}\uFF1A\u672C\u671F\u6D88\u8017 ${fmt.credits(value)} \u79EF\u5206` : `${t("pillPeriodHint")}\uFF1A${fmt.credits(value)} \u79EF\u5206`;
-    if (error) return null;
-    return import_react3.default.createElement(
+    const controller = new AbortController();
+    run(controller.signal);
+    const interval = Number.isFinite(pollMs) && pollMs > 0 ? Math.max(1e3, pollMs) : null;
+    if (interval !== null) {
+      timer = setInterval(() => {
+        const next = new AbortController();
+        run(next.signal);
+      }, interval);
+    }
+    return () => {
+      token.current++;
+      controller.abort();
+      if (timer) clearInterval(timer);
+    };
+  }, [pollMs, enabled, nonce]);
+  const refresh = () => setNonce((n) => n + 1);
+  return { snapshot, error, loading, refresh, at };
+}
+
+// client/CreditsDashboard.jsx
+var import_react2 = __toESM(require("react"), 1);
+var page = {
+  fontFamily: "inherit",
+  fontSize: "13px",
+  lineHeight: "22px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  padding: "8px 0",
+  color: "var(--dsw-alias-label-primary, inherit)",
+  minWidth: 0
+};
+var label = { primary: "var(--dsw-alias-label-primary, inherit)", secondary: "var(--dsw-alias-label-secondary, inherit)", tertiary: "var(--dsw-alias-label-tertiary, inherit)" };
+var state = { warn: "var(--dsw-alias-state-warn-primary, #f2b94b)", error: "var(--dsw-alias-state-error-primary, #e5484d)" };
+var cubeGroup = { display: "flex", flexDirection: "column", gap: "8px", padding: "16px 0" };
+var cubeGroupTitle = { fontSize: "14px", fontWeight: 400, lineHeight: "22px" };
+var cubeRow = { display: "flex", alignItems: "stretch", gap: "8px" };
+var cube = {
+  flex: 1,
+  minWidth: 0,
+  border: "0.5px solid var(--dsw-alias-border-l4, rgba(128,128,128,.24))",
+  borderRadius: "var(--dsw-radius-xl, 20px)",
+  background: "transparent",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "4px",
+  padding: "20px 12px",
+  boxSizing: "border-box"
+};
+var cubeValue = {
+  fontSize: "22px",
+  lineHeight: "28px",
+  fontWeight: 600,
+  fontVariantNumeric: "tabular-nums",
+  letterSpacing: "-.01em",
+  whiteSpace: "nowrap"
+};
+var cubeLabel = { fontSize: "12px", lineHeight: "18px", color: label.secondary, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" };
+var groupHead = { display: "flex", alignItems: "baseline", gap: "8px", minHeight: "36px" };
+var groupTitle = { fontSize: "13px", fontWeight: 600, lineHeight: "22px" };
+var groupSub = { fontSize: "12px", lineHeight: "18px", color: label.tertiary };
+var cards = {
+  display: "grid",
+  // 显式两列，不能用 auto-fill：容器稍窄一点它就塌成一列，一长条很难扫。
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "10px",
+  margin: 0,
+  padding: 0,
+  listStyle: "none"
+};
+var cardsPreset = { ...cards, gap: "12px" };
+var cardShell = {
+  border: "0.5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l4, rgba(128,128,128,.24)))",
+  borderRadius: "var(--dsw-radius-xl, 20px)",
+  background: "var(--dsw-alias-settings-card-fill, transparent)",
+  display: "flex",
+  flexDirection: "column",
+  minWidth: 0,
+  overflow: "hidden",
+  transition: "border-color .16s, background .16s"
+};
+var foldMain = {
+  appearance: "none",
+  font: "inherit",
+  color: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+  background: "transparent",
+  border: 0,
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+  gap: "2px",
+  padding: "12px 14px",
+  alignItems: "stretch"
+};
+var foldHead = { display: "flex", alignItems: "center", gap: "12px", minWidth: 0 };
+var foldTitle = { flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 500, lineHeight: "20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+var foldTrailing = { flex: "none", display: "inline-flex", alignItems: "center", gap: "8px", color: label.tertiary };
+var foldDesc = {
+  fontSize: "12px",
+  lineHeight: "18px",
+  color: label.tertiary,
+  overflow: "hidden",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical"
+};
+var foldMeta = { marginTop: "auto", paddingTop: "6px", display: "flex" };
+var foldDetails = { display: "none", borderTop: "0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,.12))", background: "var(--dsw-alias-bg-module-platform, transparent)", padding: "10px 14px 12px" };
+var facts = { display: "grid", gridTemplateColumns: "68px minmax(0, 1fr)", gap: "6px 10px", margin: 0 };
+var factKey = { fontSize: "11px", lineHeight: "17px", color: label.tertiary };
+var factVal = { margin: 0, fontSize: "12px", lineHeight: "17px", color: label.secondary, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+var noteLine = {
+  fontFamily: "inherit",
+  fontSize: "12px",
+  lineHeight: "18px",
+  fontWeight: 400,
+  color: label.secondary,
+  padding: "1px 6px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  fontVariantNumeric: "tabular-nums"
+};
+var cardIdentity = { ...noteLine, borderRadius: "var(--dsw-radius-xs, 4px)", background: "var(--dsw-alias-bg-module-platform, transparent)", maxWidth: "100%" };
+var footLink = { ...noteLine, borderRadius: "var(--dsw-radius-sm, 8px)" };
+var tag = {
+  display: "inline-flex",
+  alignItems: "center",
+  borderRadius: "999px",
+  cornerShape: "round",
+  padding: "1px 8px",
+  fontSize: "11px",
+  lineHeight: "17px",
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+  boxSizing: "border-box"
+};
+var tagOutline = { ...tag, border: "0.5px solid var(--dsw-alias-border-l4, rgba(128,128,128,.24))", color: label.tertiary };
+var tagNeutral = { ...tag, background: "var(--dsw-alias-bg-module-platform, transparent)", color: label.secondary };
+var tagWarning = { ...tag, background: "color-mix(in srgb, var(--dsw-alias-state-warn-primary, #f2b94b) 12%, transparent)", color: state.warn };
+function Tag({ tone, children }) {
+  const style = tone === "warning" ? tagWarning : tone === "outline" ? tagOutline : tagNeutral;
+  return import_react2.default.createElement("span", { style, "data-tone": tone }, children);
+}
+var presetMain = { padding: "14px 16px 12px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 };
+var presetHead = { display: "flex", alignItems: "center", gap: "6px", minWidth: 0 };
+var presetName = { fontSize: "15px", fontWeight: 600, lineHeight: "1.4", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 };
+var presetId = { flexShrink: 0, marginLeft: "auto", fontFamily: "var(--dsw-font-mono, ui-monospace, monospace)", fontSize: "11px", lineHeight: "21px", color: label.tertiary };
+var presetDesc = { color: label.secondary, fontSize: "13px", lineHeight: "1.55", marginBlock: "auto", overflowWrap: "anywhere" };
+var presetFoot = { borderTop: "0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,.12))", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "6px 10px", justifyContent: "flex-start" };
+var iconBtn = {
+  border: "0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,.16))",
+  borderRadius: "var(--dsw-radius-sm, 8px)",
+  color: label.primary,
+  background: "transparent",
+  cursor: "pointer",
+  font: "inherit",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "6px",
+  padding: "4px 10px",
+  fontSize: "12px",
+  lineHeight: "18px"
+};
+var headEnd = { marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "8px" };
+var empty = { fontSize: "13px", lineHeight: "20px", color: label.tertiary, padding: "12px 2px" };
+function Chevron({ open }) {
+  return import_react2.default.createElement(
+    "svg",
+    {
+      width: 12,
+      height: 12,
+      viewBox: "0 0 16 16",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: 1.5,
+      "aria-hidden": "true",
+      style: { flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .16s" }
+    },
+    import_react2.default.createElement("path", { d: "M4 6.5l4 4 4-4" })
+  );
+}
+function RefreshIcon() {
+  return import_react2.default.createElement(
+    "svg",
+    { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", style: { flex: "none" } },
+    import_react2.default.createElement("path", { d: "M13.5 8a5.5 5.5 0 1 1-1.6-3.9" }),
+    import_react2.default.createElement("path", { d: "M13.2 2.6v2.6h-2.6" })
+  );
+}
+function thousands(value) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value).toLocaleString("en-US") : fmt.EMPTY;
+}
+function Overview({ snapshot, t, fmt: fmt2 }) {
+  const accounts = snapshot.accountCards ?? [];
+  const credit = snapshot.creditTotals;
+  const totalCredits = accounts.reduce((sum, item) => sum + item.credits, 0);
+  const totalCapacity = accounts.reduce((sum, item) => sum + item.creditsTotal, 0);
+  return import_react2.default.createElement(
+    "div",
+    { style: cubeGroup },
+    import_react2.default.createElement(
       "div",
-      { style: root, "data-composer-credits": true },
-      import_react3.default.createElement(
+      { style: groupHead },
+      import_react2.default.createElement("span", { style: cubeGroupTitle }, t("creditsGroup")),
+      import_react2.default.createElement(
         "span",
-        { style: pill, title },
-        import_react3.default.createElement(CreditStar),
-        fmt.credits(value)
+        { style: headEnd },
+        import_react2.default.createElement(
+          "button",
+          {
+            type: "button",
+            style: iconBtn,
+            onClick: snapshot.onRefresh,
+            disabled: snapshot.loading === true,
+            title: t("refreshHint"),
+            "aria-busy": snapshot.loading === true
+          },
+          import_react2.default.createElement(RefreshIcon),
+          import_react2.default.createElement("span", null, snapshot.loading === true ? t("refreshing") : t("refresh"))
+        )
+      )
+    ),
+    import_react2.default.createElement(
+      "div",
+      { style: cubeRow },
+      import_react2.default.createElement(
+        "div",
+        { style: cube },
+        import_react2.default.createElement("div", { style: cubeValue }, fmt2.tokens(totalCredits), import_react2.default.createElement("small", { style: { fontSize: "13px", fontWeight: 400, color: label.secondary } }, `/${fmt2.tokens(totalCapacity)}`)),
+        import_react2.default.createElement("div", { style: cubeLabel }, t("balanceRatio"))
+      ),
+      import_react2.default.createElement(
+        "div",
+        { style: cube },
+        import_react2.default.createElement("div", { style: cubeValue }, fmt2.rateNumber(credit?.creditsPer1m)),
+        import_react2.default.createElement("div", { style: cubeLabel }, t("avgPer1m"))
+      ),
+      import_react2.default.createElement(
+        "div",
+        { style: cube },
+        import_react2.default.createElement("div", { style: cubeValue }, fmt2.cacheRate(credit?.cacheHitTokens, credit?.cacheMissTokens), import_react2.default.createElement("small", { style: { fontSize: "13px", fontWeight: 400, color: label.secondary } }, "")),
+        import_react2.default.createElement("div", { style: cubeLabel }, t("cacheHit"))
+      )
+    )
+  );
+}
+function ModelCard({ row, t, fmt: fmt2 }) {
+  const [open, setOpen] = import_react2.default.useState(false);
+  const supports = [
+    row.supportsToolCall ? t("capTool") : null,
+    row.supportsImages ? t("capVision") : null,
+    row.supportsReasoning ? t("capThinking") : null
+  ].filter(Boolean);
+  const desc = [...supports, row.promoLabel].filter(Boolean).join(" · ") || fmt2.EMPTY;
+  const detailId = import_react2.default.useId();
+  return import_react2.default.createElement(
+    "li",
+    // 展开态的边框色必须与常态**同一个变量**，不能换成 border-l3。
+    // 换成低一档时：折叠按钮自带 `border: 0`，浏览器会把这条 border-color
+    // 当成未指定而回退到最亮的默认边框色 —— 实测描边从 86飙到 250（纯白），
+    // 整排卡片像被点亮。所以展开只改底色，边框一律走cardShell。
+    { style: cardShell },
+    import_react2.default.createElement(
+      "button",
+      {
+        type: "button",
+        style: { ...foldMain, background: open ? "var(--dsw-alias-interactive-bg-hover, transparent)" : "transparent" },
+        "aria-expanded": open,
+        "aria-controls": detailId,
+        onClick: () => setOpen((value) => !value)
+      },
+      import_react2.default.createElement(
+        "span",
+        { style: foldHead },
+        import_react2.default.createElement("strong", { style: foldTitle, title: row.id }, row.id),
+        import_react2.default.createElement(
+          "span",
+          { style: foldTrailing },
+          import_react2.default.createElement(Tag, { key: "rate", tone: "neutral" }, fmt2.rateNumber(row.multiplier)),
+          import_react2.default.createElement(Chevron, { open })
+        )
+      ),
+      import_react2.default.createElement("span", { style: { ...foldDesc, display: open ? "block" : "-webkit-box" } }, desc),
+      import_react2.default.createElement(
+        "span",
+        { style: foldMeta },
+        // 「32.92 积分」有歧义：是剩余、是倍率、还是本次消耗？写全才不含糊。
+        import_react2.default.createElement("span", { style: cardIdentity }, row.requests > 0 ? `${t("creditsDeducted")} ${fmt2.gatewayCredit(row.credits)}` : t("noCredits"))
+      )
+    ),
+    import_react2.default.createElement(
+      "div",
+      { id: detailId, style: { ...foldDetails, display: open ? "block" : "none" } },
+      import_react2.default.createElement(
+        "dl",
+        { style: facts },
+        import_react2.default.createElement("dt", { style: factKey }, t("requests")),
+        import_react2.default.createElement("dd", { style: factVal }, row.requests > 0 ? thousands(row.requests, fmt2) : fmt2.EMPTY),
+        import_react2.default.createElement("dt", { style: factKey }, t("cacheHit")),
+        import_react2.default.createElement("dd", { style: factVal }, fmt2.cacheRate(row.cacheHitTokens, row.cacheMissTokens)),
+        import_react2.default.createElement("dt", { style: factKey }, t("per1mCredits")),
+        import_react2.default.createElement("dd", { style: factVal }, fmt2.gatewayCreditRatio(row.creditsPer1m, 1, row.cacheHitTokens + row.cacheMissTokens))
+      )
+    )
+  );
+}
+function ModelSection({ models, t, fmt: fmt2 }) {
+  const rows = models ?? [];
+  const rateText = `${LOW_RATE_THRESHOLD}`;
+  return import_react2.default.createElement(
+    "div",
+    null,
+    import_react2.default.createElement(
+      "div",
+      { style: groupHead },
+      import_react2.default.createElement("span", { style: groupTitle }, t("model")),
+      import_react2.default.createElement("span", { style: groupSub }, `${t("underRate")} ${rateText} · ${rows.length} ${t("countUnit")}`)
+    ),
+    rows.length === 0 ? import_react2.default.createElement("div", { style: empty }, t("noLowRateModel")) : import_react2.default.createElement(
+      "ul",
+      { style: cards },
+      rows.map((row) => import_react2.default.createElement(ModelCard, { key: row.id, row, t, fmt: fmt2 }))
+    )
+  );
+}
+function shortName(nickname) {
+  return String(nickname ?? "").replace(/@.*$/, "");
+}
+function AccountCard({ account, t, fmt: fmt2 }) {
+  const isCn = account.realm === "cn";
+  const limited = account.limited ?? [];
+  const head = limited[0];
+  const unlockAt = head ? head.resetAt ?? head.until : null;
+  let footer;
+  if (head) {
+    footer = [
+      import_react2.default.createElement(Tag, { key: "tag", tone: "warning" }, `${head.model} ${t("rateLimited")}`),
+      unlockAt === null ? null : import_react2.default.createElement("span", { key: "at", style: footLink, title: `${t("unlockAt")} ${fmt2.clockAt(unlockAt)}` }, `${t("unlockAt")} ${fmt2.clockAt(unlockAt)}`)
+    ];
+  } else {
+    footer = import_react2.default.createElement("span", { style: footLink }, t("available"));
+  }
+  return import_react2.default.createElement(
+    "li",
+    { style: cardShell },
+    import_react2.default.createElement(
+      "div",
+      { style: presetMain },
+      import_react2.default.createElement(
+        "div",
+        { style: presetHead },
+        import_react2.default.createElement("span", { style: presetName, title: account.nickname }, shortName(account.nickname)),
+        import_react2.default.createElement(Tag, { key: "realm", tone: "outline" }, isCn ? t("realmCn") : t("realmGlobal")),
+        import_react2.default.createElement("span", { style: presetId }, account.realm)
+      ),
+      import_react2.default.createElement(
+        "div",
+        { style: presetDesc },
+        `${fmt2.gatewayCredit(account.credits)}${account.creditsTotal > 0 ? ` / ${fmt2.gatewayCredit(account.creditsTotal)}` : ""} ${t("creditsUnit")}`
+      )
+    ),
+    import_react2.default.createElement("div", { style: presetFoot }, footer)
+  );
+}
+function AccountSection({ accounts, t, fmt: fmt2 }) {
+  const rows = accounts ?? [];
+  return import_react2.default.createElement(
+    "div",
+    null,
+    import_react2.default.createElement(
+      "div",
+      { style: groupHead },
+      import_react2.default.createElement("span", { style: groupTitle }, t("accounts")),
+      import_react2.default.createElement("span", { style: groupSub }, `${rows.length} ${t("countUnit")}`)
+    ),
+    rows.length === 0 ? import_react2.default.createElement("div", { style: empty }, t("noAccounts")) : import_react2.default.createElement(
+      "ul",
+      { style: cardsPreset },
+      rows.map((account) => import_react2.default.createElement(AccountCard, {
+        key: account.uid || `${account.realm}-${account.nickname}`,
+        account,
+        t,
+        fmt: fmt2
+      }))
+    )
+  );
+}
+function CreditsDashboard({ t, fmt: fmt2, useSnapshot: useSnapshot2, pollMs, ...rest }) {
+  const { snapshot, error, loading, refresh } = useSnapshot2({ pollMs });
+  const state2 = import_react2.default.useMemo(() => {
+    if (error) return { kind: "error", text: error };
+    if (!snapshot) return { kind: "loading", text: t("loading") };
+    if (snapshot.ok === false) return { kind: "error", text: snapshot.error ?? t("unreachable") };
+    const empty2 = (snapshot.accountCards?.length ?? 0) === 0 && (snapshot.models?.length ?? 0) === 0;
+    if (empty2) return { kind: "empty", text: t("noData") };
+    return { kind: "ready" };
+  }, [error, snapshot, t]);
+  if (state2.kind === "loading") {
+    return import_react2.default.createElement("div", { style: { ...page, opacity: 0.7, ...rest } }, state2.text);
+  }
+  if (state2.kind === "error" || state2.kind === "empty") {
+    return import_react2.default.createElement(
+      "div",
+      { style: { ...page, gap: "10px", ...rest } },
+      import_react2.default.createElement("div", { style: { fontSize: "13px", color: state2.kind === "error" ? state2.error : void 0 } }, state2.text),
+      import_react2.default.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: refresh,
+          disabled: loading,
+          style: { ...iconBtn, alignSelf: "flex-start" }
+        },
+        t("retry")
       )
     );
   }
+  return import_react2.default.createElement(
+    "div",
+    { style: { ...page, ...rest } },
+    // refresh 是 useSnapshot 给的整页重取：它换掉整份 snapshot，
+    // 顶部三张卡、模型列表、账号列表一起更新，不只更新标题行那几个数。
+    import_react2.default.createElement(Overview, { snapshot: { ...snapshot, onRefresh: refresh, loading }, t, fmt: fmt2 }),
+    import_react2.default.createElement(ModelSection, { models: snapshot.models, t, fmt: fmt2 }),
+    import_react2.default.createElement(AccountSection, { accounts: snapshot.accountCards, t, fmt: fmt2 })
+  );
+}
 
-  // client/index.js
-  var name = "workbuddy-credits";
-  var inject = ["slots", "locale"];
-  function apply(ctx) {
+// client/CreditsPill.jsx
+var import_react3 = __toESM(require("react"), 1);
+var root = {
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
+  fontSize: "calc(var(--dsh-content-font-size-secondary, 13px) - 1px)",
+  lineHeight: "calc(20px + var(--dsh-content-font-delta-secondary, 0px))",
+  justifyContent: "center",
+  gap: "12px",
+  display: "flex"
+};
+var pill = {
+  boxSizing: "border-box",
+  maxWidth: "100%",
+  color: "var(--dsw-alias-label-tertiary)",
+  font: "inherit",
+  fontVariantNumeric: "tabular-nums",
+  lineHeight: "inherit",
+  whiteSpace: "nowrap",
+  background: "0 0",
+  border: "none",
+  borderRadius: "999px",
+  alignItems: "center",
+  gap: "6px",
+  padding: "1px 8px",
+  display: "inline-flex"
+};
+var icon = { flex: "none", width: 14, height: 14 };
+function CreditStar() {
+  return import_react3.default.createElement(
+    "svg",
+    {
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: 1.6,
+      strokeLinejoin: "round",
+      strokeLinecap: "round",
+      "aria-hidden": true,
+      style: icon
+    },
+    import_react3.default.createElement("path", {
+      d: "M12 3.2l1.55 5.05a2 2 0 0 0 1.28 1.28L19.88 11l-5.05 1.55a2 2 0 0 0-1.28 1.28L12 18.88l-1.55-5.05a2 2 0 0 0-1.28-1.28L4.12 11l5.05-1.47a2 2 0 0 0 1.28-1.28L12 3.2z"
+    })
+  );
+}
+function resolveCredits(snapshot, modelSelection) {
+  const model = modelSelection?.next?.model ?? modelSelection?.lastUsed?.model ?? null;
+  if (model) {
+    const match = (snapshot?.matches ?? []).find((row) => row.id === model);
+    if (match) return { value: match.credits, scope: "model", model };
+  }
+  const total = snapshot?.totals?.credits;
+  return {
+    value: typeof total === "number" && Number.isFinite(total) ? total : null,
+    scope: "period",
+    model
+  };
+}
+function CreditsPill({ t, fmt: fmt2, useSnapshot: useSnapshot2, pollMs, useProjection }) {
+  const { snapshot, error } = useSnapshot2({ pollMs });
+  const modelSelection = typeof useProjection === "function" ? useProjection("modelSelection") : void 0;
+  const { value, scope, model } = resolveCredits(snapshot, modelSelection);
+  if (value === null) return null;
+  const title = scope === "model" && model ? `${model}：本期消耗 ${fmt2.credits(value)} 积分` : `${t("pillPeriodHint")}：${fmt2.credits(value)} 积分`;
+  if (error) return null;
+  return import_react3.default.createElement(
+    "div",
+    { style: root, "data-composer-credits": true },
+    import_react3.default.createElement(
+      "span",
+      { style: pill, title },
+      import_react3.default.createElement(CreditStar),
+      fmt2.credits(value)
+    )
+  );
+}
+
+// client/index.js
+var name = "workbuddy-credits";
+var inject = ["slots", "locale"];
+function apply(ctx) {
+  try {
+    ctx.effect(
+      () => ctx.locale.register(LOCALE_NS, {
+        zh: DICT_ZH,
+        en: DICT_EN
+      }),
+      "workbuddy-credits: dictionaries"
+    );
+    const t = ctx.locale.bind(LOCALE_NS);
+    ctx.slots.inject(
+      "conversation.composer.dock",
+      () => ctx.slots.register(
+        {
+          name: "conversation.composer.dock",
+          id: "workbuddy-credits",
+          order: -1,
+          locale: LOCALE_NS
+        },
+        (props) => import_react4.default.createElement(CreditsPill, {
+          ...props,
+          t,
+          fmt: format_exports,
+          useSnapshot,
+          pollMs: DEFAULT_POLL_MS
+        })
+      )
+    );
+    ctx.slots.inject(
+      "settings.section",
+      () => ctx.slots.register(
+        {
+          name: "settings.section",
+          id: "workbuddy-credits-balance",
+          order: 12,
+          label: () => t("balancePage"),
+          locale: LOCALE_NS
+        },
+        (props) => import_react4.default.createElement(CreditsDashboard, {
+          ...props,
+          t,
+          fmt: format_exports,
+          useSnapshot,
+          pollMs: DEFAULT_POLL_MS
+        })
+      )
+    );
+  } catch (error) {
     try {
-      ctx.effect(
-        () => ctx.locale.register(LOCALE_NS, {
-          zh: DICT_ZH,
-          en: DICT_EN
-        }),
-        "workbuddy-credits: dictionaries"
-      );
-      const t = ctx.locale.bind(LOCALE_NS);
-      ctx.slots.inject(
-        "conversation.composer.dock",
-        () => ctx.slots.register(
-          {
-            name: "conversation.composer.dock",
-            id: "workbuddy-credits",
-            order: -1,
-            locale: LOCALE_NS
-          },
-          (props) => import_react4.default.createElement(CreditsPill, {
-            ...props,
-            t,
-            fmt: format_exports,
-            useSnapshot,
-            pollMs: DEFAULT_POLL_MS
-          })
-        )
-      );
-      ctx.slots.inject(
-        "settings.section",
-        () => ctx.slots.register(
-          {
-            name: "settings.section",
-            id: "workbuddy-credits-balance",
-            order: 12,
-            label: () => t("balancePage"),
-            locale: LOCALE_NS
-          },
-          (props) => import_react4.default.createElement(CreditsDashboard, {
-            ...props,
-            t,
-            fmt: format_exports,
-            useSnapshot,
-            pollMs: DEFAULT_POLL_MS
-          })
-        )
-      );
-    } catch (error) {
-      try {
-        console.error("workbuddy-credits: \u754C\u9762\u672A\u6302\u8F7D", error);
-      } catch {
-      }
+      console.error("workbuddy-credits: 界面未挂载", error);
+    } catch {
     }
   }
-  return __toCommonJS(index_exports);
-})();
+}
 
-    return __WB_CREDITS__;
+    return module.exports;
   }
 });

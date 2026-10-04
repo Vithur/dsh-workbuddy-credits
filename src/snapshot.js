@@ -7,7 +7,8 @@
  * @module src/snapshot.js
  */
 
-import { buildModelCapabilities, buildModelMatches, buildSeries, collectUsageRates, creditTotals, indexModelCapabilities, indexModelRates, toCreditRow, topRows } from '../shared/parse.js'
+import { buildModelCapabilities, buildModelMatches, buildSeries, collectUsageRates, creditTotals, indexModelCapabilities, indexModelRates, lowRateModels, accountCards } from '../shared/parse.js'
+import { LOW_RATE_THRESHOLD } from '../shared/constants.js'
 
 /**
  * 从 DSH 配置里抽出已添加的模型 id。
@@ -42,17 +43,23 @@ export function configuredModels(llmPiAiConfig, providerIds) {
  * @param {import('./gateway.js').Gateway} gateway
  * @param {object} options
  * @param {string[]} options.models 已添加模型 id
- * @param {number} options.rowLimit 表格显示行数上限
  * @returns {Promise<import('../shared/types.js').UsageSnapshot>}
  */
 export async function buildSnapshot(ctx, gateway, options) {
-  const { models, rowLimit } = options
+  const { models } = options
 
   // 两份同时取：缺任何一份都还能出半个面板，所以分开容错。
   const [listing, usage, overview] = await Promise.all([gateway.models(), gateway.usage(), gateway.overview()])
 
   if (!listing && !usage && !overview) {
-    return { ok: false, error: '网关不可达或 API Key 无效', models: [], accounts: [], creditModels: [], creditAccounts: [], series: [], matches: [] }
+    return {
+      ok: false,
+      error: '网关不可达或 API Key 无效',
+      models: [],
+      accountCards: [],
+      series: [],
+      matches: [],
+    }
   }
 
   const rateIndex = indexModelRates(listing ?? {})
@@ -64,79 +71,22 @@ export async function buildSnapshot(ctx, gateway, options) {
     if (!merged.has(key)) merged.set(key, { multiplier: rate, raw: String(rate) })
   }
 
-  const matches = buildModelMatches(models, merged, usage ?? {})
-  const limit = Number.isFinite(rowLimit) ? Math.max(1, rowLimit) : 10
-
+  // `matches` 走「已添加模型 × 网关倍率」，只服务状态栏 pill（要定位会话当前模型）；
+  // 设置页的模型板块走 `models`，那是网关自己的清单，与 DSH 配置无关 ——
+  // 用户看到的是「网关现在有哪些便宜模型」，不是「我配了哪些」。
   return {
     ok: true,
     error: null,
     generated: usage?.generated ?? null,
     since: usage?.since ?? null,
     totals: usage?.totals ?? null,
-    balances: normalizeBalances(overview?.accounts),
+    creditTotals: creditTotals(usage?.totals),
+    accounts: overview?.accounts ?? [],
+    accountCards: accountCards(overview?.accounts),
     capabilities: buildModelCapabilities(models, capabilityIndex),
     configuredModels: models,
-    models: topRows(usage?.by_model, limit, usageRates),
-    accounts: topRows(usage?.by_account, limit, usageRates),
-    // 积分扣除历史：整份列出，不按 rowLimit 截断 —— 这是账目，缺行会误导。
-    creditModels: (usage?.credit_by_model ?? []).map(toCreditRow),
-    creditAccounts: (usage?.credit_by_account ?? []).map(toCreditRow),
-    creditTotals: creditTotals(usage?.totals),
+    models: lowRateModels(listing ?? {}, usage ?? {}, LOW_RATE_THRESHOLD),
     series: buildSeries(usage ?? {}),
-    matches,
-  }
-}
-
-/**
- * 从快照里算出「会话级别」的展示所需总和。
- *
- * 「会话」在网关侧没有直接对应的维度 —— 网关按小时/模型/账户聚合，不认 DSH 的会话。
- * 所以这里取的是**当前统计窗口内的整体消耗**：财务上对得上，语义上诚实标注为
- * 「本期」而不是假装算出了单个会话的量。
- *
- * @param {import('../shared/types.js').UsageSnapshot} snapshot
- */
-/** 将网关 overview 账户行裁成余额页需要的安全字段。 */
-export function normalizeBalances(accounts) {
-  return (Array.isArray(accounts) ? accounts : []).map((account) => ({
-    uid: typeof account?.uid === 'string' ? account.uid : '',
-    nickname: typeof account?.nickname === 'string' ? account.nickname : '未命名账户',
-    realm: typeof account?.realm === 'string' ? account.realm : '',
-    credits: Number.isFinite(account?.credits) ? account.credits : 0,
-    creditsTotal: Number.isFinite(account?.credits_total) ? account.credits_total : 0,
-    creditsExpiring: Number.isFinite(account?.credits_expiring) ? account.credits_expiring : 0,
-    earliestExpiry: typeof account?.credits_earliest_expiry === 'string' ? account.credits_earliest_expiry : null,
-    earliestRemaining: Number.isFinite(account?.credits_earliest_remaining) ? account.credits_earliest_remaining : 0,
-    disabled: account?.disabled === true,
-    cooling: account?.cooling === true,
-    until: typeof account?.until === 'string' ? account.until : null,
-    successCount: Number.isFinite(account?.success_count) ? account.success_count : 0,
-    lastSuccess: typeof account?.last_success === 'string' ? account.last_success : null,
-    tokenUsage: account?.token_usage && typeof account.token_usage === 'object' ? {
-      requests: Number.isFinite(account.token_usage.request_count) ? account.token_usage.request_count : 0,
-      usage: Number.isFinite(account.token_usage.usage_count) ? account.token_usage.usage_count : 0,
-      promptTokens: Number.isFinite(account.token_usage.prompt_tokens) ? account.token_usage.prompt_tokens : 0,
-      completionTokens: Number.isFinite(account.token_usage.completion_tokens) ? account.token_usage.completion_tokens : 0,
-      totalTokens: Number.isFinite(account.token_usage.total_tokens) ? account.token_usage.total_tokens : 0,
-      lastModel: typeof account.token_usage.last_model === 'string' ? account.token_usage.last_model : null,
-      lastUsedAt: typeof account.token_usage.last_used_at === 'string' ? account.token_usage.last_used_at : null,
-    } : null,
-    modelCosts: Array.isArray(account?.model_costs) ? account.model_costs.map((cost) => ({
-      model: typeof cost?.model === 'string' ? cost.model : '',
-      costPer1k: Number.isFinite(cost?.cost_per_1k) ? cost.cost_per_1k : 0,
-      lastSeen: typeof cost?.last_seen === 'string' ? cost.last_seen : null,
-      samples: Number.isFinite(cost?.samples) ? cost.samples : 0,
-    })) : [],
-  }))
-}
-
-export function headlineOf(snapshot) {
-  const totals = snapshot?.totals
-  return {
-    credits: Number.isFinite(totals?.credits) ? totals.credits : 0,
-    requests: Number.isFinite(totals?.requests) ? totals.requests : 0,
-    errors: Number.isFinite(totals?.errors) ? totals.errors : 0,
-    tokens: Number.isFinite(totals?.total_tokens) ? totals.total_tokens : 0,
-    cacheHitRate: Number.isFinite(totals?.cache_hit_rate) ? totals.cache_hit_rate : 0,
+    matches: buildModelMatches(models, merged, usage ?? {}),
   }
 }

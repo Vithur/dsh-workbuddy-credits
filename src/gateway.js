@@ -9,7 +9,7 @@
  * @module src/gateway.js
  */
 
-import { UPSTREAM_TIMEOUT_MS, HOST_CACHE_MS } from '../shared/constants.js'
+import { UPSTREAM_TIMEOUT_MS, HOST_CACHE_MS, USAGE_WINDOW_HOURS } from '../shared/constants.js'
 
 /** 一次带超时的 JSON 读取；任何失败（含非 2xx）都返回 null。 */
 async function getJson(url, headers, timeoutMs = UPSTREAM_TIMEOUT_MS) {
@@ -94,25 +94,41 @@ export class Gateway {
 
   /**
    * 取完整模型清单（含每个模型的 `credits` 倍率字符串与推理等级）。
+   *
    * 面板接口优先，因为它额外返回 `supported_efforts` / `default_effort`；
    * `/v1/models` 仍作为回退，兼容关闭面板路由的网关版本。
-   * @returns {Promise<object|null>}
+   *
+   * ## 两条接口的形状不同，返回值统一成 `{ models: [...] }`
+   *
+   * `/panel/api/models` 给 `{ models: [...] }`，`/v1/models` 给 `{ data: [...] }`。
+   * 原先这里把面板结果包成 `{ data: ... }` 去迁就 `/v1`，于是同一个字段名在两条
+   * 路径上含义相反 —— 下游按 `models` 读就永远读到空数组，而且**不报错**，
+   * 只表现为「模型板块一行都没有」。这里在出口收口，下游只认一种形状。
+   *
+   * @returns {Promise<{ models: object[] }|null>}
    */
   models() {
     return this.#cache.use('models', async () => {
       const panel = await getJson(`${this.#baseUrl}/panel/api/models`, this.#headers())
-      if (panel && Array.isArray(panel.models)) return { data: panel.models }
-      return await getJson(`${this.#baseUrl}/v1/models`, this.#headers())
+      if (panel && Array.isArray(panel.models)) return { models: panel.models }
+      const legacy = await getJson(`${this.#baseUrl}/v1/models`, this.#headers())
+      if (legacy && Array.isArray(legacy.data)) return { models: legacy.data }
+      return null
     })
   }
 
   /**
    * 取用量快照。
+   *
+   * `hours` 显式给了窗口 —— 网关的默认窗口是当日累计，跨度能到十几个小时，
+   * 而设置页只画最近 12 小时。窗口写在 URL 上而不是事后截断 `series`：事后截断
+   * 拿到的仍是全天口径的 `totals`，顶部那几个数字会和下面的图对不上。
+   *
    * @returns {Promise<object|null>}
    */
   usage() {
     return this.#cache.use('usage', async () => {
-      return await getJson(`${this.#baseUrl}/panel/api/usage`, this.#headers())
+      return await getJson(`${this.#baseUrl}/panel/api/usage?hours=${USAGE_WINDOW_HOURS}`, this.#headers())
     })
   }
 
